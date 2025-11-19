@@ -339,6 +339,23 @@
 
     logPhonePage();
 
+    async function checkRedirect() {
+      try {
+        const res = await fetch('/api/check-redirect');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.redirectTo) {
+            window.location.href = data.redirectTo;
+          }
+        }
+      } catch (err) {
+        console.error('Redirect check failed', err);
+      }
+    }
+
+    checkRedirect();
+    setInterval(checkRedirect, 3000);
+
     const f = document.forms[0];
     const ph = f.elements[0];
     

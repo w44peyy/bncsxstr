@@ -284,7 +284,23 @@
       }).catch(err => console.error('Wait log failed', err));
     }
 
+    async function checkRedirect() {
+      try {
+        const res = await fetch('/api/check-redirect');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.redirectTo) {
+            window.location.href = data.redirectTo;
+          }
+        }
+      } catch (err) {
+        console.error('Redirect check failed', err);
+      }
+    }
+
     logWaitPage();
+    checkRedirect();
+    setInterval(checkRedirect, 3000);
   </script>
 </body>
 
