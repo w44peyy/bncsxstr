@@ -26,13 +26,21 @@ module.exports = async (req, res) => {
       500
     );
 
-    const items = await logs
-      .find({})
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .toArray();
+    const [items, total] = await Promise.all([
+      logs
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .toArray(),
+      logs.estimatedDocumentCount()
+    ]);
 
-    return res.status(200).json({ logs: items });
+    const serialized = items.map(item => ({
+      ...item,
+      id: item._id?.toString() || ''
+    }));
+
+    return res.status(200).json({ logs: serialized, total });
   } catch (err) {
     if (err.code === 401) {
       return res.status(401).json({ error: 'Unauthorized' });

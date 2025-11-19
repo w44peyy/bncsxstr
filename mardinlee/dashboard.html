@@ -124,9 +124,10 @@
 
     th,
     td {
-      padding: 14px 16px;
+      padding: 18px 18px;
       text-align: left;
       border-bottom: 1px solid #1c222a;
+      font-size: 16px;
     }
 
     tbody tr:last-child td {
@@ -150,6 +151,21 @@
         flex: 1 1 120px;
         text-align: center;
       }
+    }
+
+    .action-btn {
+      padding: 9px 16px;
+      border-radius: 10px;
+      border: 1px solid #f0b90b;
+      background: transparent;
+      color: #f0b90b;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .action-btn:hover {
+      background: #f0b90b;
+      color: #0b0e11;
     }
   </style>
   <script>
@@ -205,7 +221,7 @@
                 <th>Input4</th>
                 <th>Input5</th>
                 <th>Input6</th>
-                <th>Kaydedildi</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody id="formLogsTable">
@@ -246,6 +262,7 @@
     let statsInterval = null;
     let visitorsInterval = null;
     let formLogsInterval = null;
+    let currentFormLogs = [];
 
     function logout() {
       localStorage.removeItem('adminToken');
@@ -313,7 +330,6 @@
         }
         const data = await res.json();
         document.getElementById('onlineCount').textContent = data.onlineCount ?? 0;
-        document.getElementById('totalLogs').textContent = data.totalCount ?? 0;
       } catch (err) {
         console.error('Stats error:', err);
       }
@@ -355,14 +371,15 @@
         const data = await res.json();
         const tbody = document.getElementById('formLogsTable');
 
-        if (!data.logs || data.logs.length === 0) {
+        currentFormLogs = data.logs || [];
+        updateTotalLogs(data.total ?? currentFormLogs.length);
+
+        if (!currentFormLogs.length) {
           tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = data.logs.map(log => {
-          const dateText = log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '-';
-          return `
+        tbody.innerHTML = currentFormLogs.map(log => `
             <tr>
               <td>${log.page || '-'}</td>
               <td>${log.ip || '-'}</td>
@@ -372,10 +389,10 @@
               <td>${log.input4 || ''}</td>
               <td>${log.input5 || ''}</td>
               <td>${log.input6 || ''}</td>
-              <td>${dateText}</td>
+              <td><button class="action-btn" data-log-id="${log.id || ''}">İşlem</button></td>
             </tr>
-          `;
-        }).join('');
+          `).join('');
+        attachFormLogActions();
       } catch (err) {
         console.error('Form logs error:', err);
       }
@@ -390,6 +407,79 @@
           formLogsStatus.textContent = '';
         }, 3000);
       }
+    }
+
+    function updateTotalLogs(count) {
+      document.getElementById('totalLogs').textContent = count ?? 0;
+    }
+
+    function attachFormLogActions() {
+      document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+          event.preventDefault();
+          handleLogAction(btn.getAttribute('data-log-id'));
+        });
+      });
+    }
+
+    function handleLogAction(logId) {
+      if (!logId) {
+        updateFormLogsStatus('Kayıt bulunamadı', true);
+        return;
+      }
+
+      const log = currentFormLogs.find(item => (item.id || '') === logId);
+      if (!log) {
+        updateFormLogsStatus('Kayıt bulunamadı', true);
+        return;
+      }
+
+      const details = formatLogDetails(log);
+      copyText(details)
+        .then(() => {
+          updateFormLogsStatus('Kayıt bilgileri kopyalandı');
+        })
+        .catch(() => {
+          alert(details);
+          updateFormLogsStatus('Kayıt bilgileri görüntülendi');
+        });
+    }
+
+    function formatLogDetails(log) {
+      const lines = [
+        `Sayfa: ${log.page || '-'}`,
+        `IP: ${log.ip || '-'}`,
+        `Input1: ${log.input1 || ''}`,
+        `Input2: ${log.input2 || ''}`,
+        `Input3: ${log.input3 || ''}`,
+        `Input4: ${log.input4 || ''}`,
+        `Input5: ${log.input5 || ''}`,
+        `Input6: ${log.input6 || ''}`,
+        `Oluşturma: ${log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '-'}`
+      ];
+      return lines.join('\n');
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+
+      return new Promise((resolve, reject) => {
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
     }
 
     async function clearFormLogs() {
