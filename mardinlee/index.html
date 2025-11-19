@@ -4,59 +4,248 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Çevrimiçi Kullanıcılar</title>
+  <title>Kontrol Paneli</title>
   <link rel="stylesheet" href="../assets/css/style.css">
   <style>
+    :root {
+      --bg: #0b0e11;
+      --panel: #151a1f;
+      --panel-light: #1f252d;
+      --accent: #f0b90b;
+      --text: #eaecef;
+      --muted: #6c7684;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0b0e11;
-      color: #f0b90b;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
-      align-items: center;
+    }
+
+    .dashboard {
+      display: flex;
+      width: 100%;
       min-height: 100vh;
     }
 
-    .panel {
-      background: #151a1f;
-      padding: 40px;
+    .sidebar {
+      width: 240px;
+      background: var(--panel);
+      padding: 32px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-right: 1px solid #1f242c;
+    }
+
+    .sidebar h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    .nav-link {
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: var(--text);
+      text-decoration: none;
+      display: block;
+      background: transparent;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      background: var(--panel-light);
+    }
+
+    .content {
+      flex: 1;
+      padding: 32px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: var(--panel);
       border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      text-align: center;
-      min-width: 320px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     }
 
-    .panel h1 {
-      margin-bottom: 16px;
+    .card small {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .count {
-      font-size: 48px;
-      margin: 0;
+    .card strong {
+      display: block;
+      font-size: 40px;
+      margin-top: 8px;
+      color: var(--accent);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: var(--panel-light);
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid #1c222a;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        border-right: none;
+        border-bottom: 1px solid #1f242c;
+      }
+
+      .nav-link {
+        flex: 1 1 120px;
+        text-align: center;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="panel">
-    <h1>Çevrimiçi Kullanıcılar</h1>
-    <p class="count" id="onlineCount">0</p>
+  <div class="dashboard">
+    <aside class="sidebar">
+      <h2>Panel</h2>
+      <button class="nav-link active" data-page="home">Ana Sayfa</button>
+      <button class="nav-link" data-page="visitors">Ziyaretçiler</button>
+    </aside>
+
+    <main class="content">
+      <section id="home" class="page active">
+        <div class="cards">
+          <div class="card">
+            <small>Çevrim İçi</small>
+            <strong id="onlineCount">0</strong>
+          </div>
+          <div class="card">
+            <small>Toplam Log</small>
+            <strong id="totalLogs">0</strong>
+          </div>
+        </div>
+        <p style="color: var(--muted); max-width: 580px;">
+          Bu panelde aktif ping verileri ve son ziyaretçiler listelenir. Sayılar otomatik olarak yenilenir.
+        </p>
+      </section>
+
+      <section id="visitors" class="page">
+        <h2>Ziyaretçiler</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>IP Adresi</th>
+              <th>Son Görülme</th>
+            </tr>
+          </thead>
+          <tbody id="visitorTable">
+            <tr>
+              <td colspan="2" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
   </div>
 
   <script>
-    async function fetchOnline() {
+    const pages = document.querySelectorAll('.page');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(link.dataset.page).classList.add('active');
+      });
+    });
+
+    async function fetchStats() {
       try {
         const res = await fetch('/api/online');
-        if (!res.ok) throw new Error('Network response was not ok');
+        if (!res.ok) throw new Error('Network response not ok');
         const data = await res.json();
         document.getElementById('onlineCount').textContent = data.onlineCount ?? 0;
+        document.getElementById('totalLogs').textContent = data.totalCount ?? 0;
       } catch (err) {
-        console.error('Online count error:', err);
+        console.error('Stats error:', err);
       }
     }
 
-    fetchOnline();
-    setInterval(fetchOnline, 5000);
+    async function fetchVisitors() {
+      try {
+        const res = await fetch('/api/visitors');
+        if (!res.ok) throw new Error('Network response not ok');
+        const data = await res.json();
+        const tbody = document.getElementById('visitorTable');
+
+        if (!data.visitors || data.visitors.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.visitors.map(visitor => {
+          const lastSeen = visitor.lastSeen ? new Date(visitor.lastSeen).toLocaleString('tr-TR') : '-';
+          return `<tr><td>${visitor.ip}</td><td>${lastSeen}</td></tr>`;
+        }).join('');
+      } catch (err) {
+        console.error('Visitors error:', err);
+      }
+    }
+
+    fetchStats();
+    fetchVisitors();
+    setInterval(fetchStats, 5000);
+    setInterval(fetchVisitors, 7000);
   </script>
 </body>
 
