@@ -983,44 +983,89 @@
       const redirectTo = actionMap[action];
       
       if (redirectTo) {
-        try {
-          const res = await fetch('/api/admin/redirect', {
-            method: 'POST',
-            headers: {
-              ...authHeaders(),
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              ip: log.ip,
-              redirectTo
-            })
-          });
+        // Retry mekanizması ile yönlendirme - sürekli retry yap, sadece başarılı olduğunda göster
+        let success = false;
+        let retryCount = 0;
+        const maxRetries = 999999; // Sürekli retry (pratik olarak sonsuz)
+        const retryDelay = 2000; // 2 saniye bekleme
+        
+        const attemptRedirect = async () => {
+          while (!success && retryCount < maxRetries) {
+            try {
+              retryCount++;
+              console.log(`Yönlendirme denemesi ${retryCount}...`);
+              
+              const res = await fetch('/api/admin/redirect', {
+                method: 'POST',
+                headers: {
+                  ...authHeaders(),
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  ip: log.ip,
+                  redirectTo
+                })
+              });
 
-          if (res.status === 401) {
-            handleUnauthorized();
-            return;
-          }
-          if (res.status === 403) {
-            // Vercel bot algılaması - login'e yönlendirme yapma
-            console.warn('Redirect API 403 (Vercel bot protection)');
-            updateFormLogsStatus('Vercel koruması nedeniyle işlem yapılamadı', true);
-            return;
-          }
-          if (res.ok) {
-            updateFormLogsStatus(`${action} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
-          } else {
-            const contentType = res.headers.get('content-type');
-            let errorData = {};
-            if (contentType && contentType.includes('application/json')) {
-              errorData = await res.json().catch(() => ({}));
+              if (res.status === 401) {
+                handleUnauthorized();
+                return;
+              }
+              
+              if (res.status === 403) {
+                // Vercel bot algılaması - retry yap
+                console.warn(`Redirect API 403 (Vercel bot protection) - Retry ${retryCount}`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                continue;
+              }
+              
+              if (res.ok) {
+                success = true;
+                // Sadece başarılı olduğunda mesaj göster
+                updateFormLogsStatus(`${action} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
+                console.log(`Yönlendirme başarılı! (Deneme: ${retryCount})`);
+                return;
+              }
+              
+              // 500 veya diğer hatalar için retry yap
+              if (res.status === 500 || res.status === 503) {
+                console.error(`Redirect API error (${res.status}) - Retry ${retryCount}`);
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                  const errorData = await res.json().catch(() => ({}));
+                  console.error('Error details:', errorData);
+                }
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                continue;
+              }
+              
+              // Diğer hatalar (400, 404, vb.) için retry yapma, ama log tut
+              const contentType = res.headers.get('content-type');
+              let errorData = {};
+              if (contentType && contentType.includes('application/json')) {
+                errorData = await res.json().catch(() => ({}));
+              }
+              console.error('Redirect API error:', res.status, res.statusText, errorData);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              continue;
+              
+            } catch (err) {
+              console.error(`Redirect error (Deneme ${retryCount}):`, err);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              continue;
             }
-            console.error('Redirect API error:', res.status, res.statusText, errorData);
-            updateFormLogsStatus(errorData.error || 'Yönlendirme hatası', true);
           }
-        } catch (err) {
-          console.error('Redirect error', err);
-          updateFormLogsStatus('Yönlendirme hatası', true);
-        }
+          
+          // Max retry'a ulaşıldıysa (olmayacak ama yine de)
+          if (!success) {
+            console.error('Yönlendirme max retry limitine ulaştı');
+          }
+        };
+        
+        // Arka planda retry başlat (await etme ki UI donmasın)
+        attemptRedirect().catch(err => {
+          console.error('Redirect attempt error:', err);
+        });
       } else {
         // Redirect gerektirmeyen işlemler
         switch (action) {

