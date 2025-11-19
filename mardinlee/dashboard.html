@@ -185,6 +185,14 @@
       background: #ff6b6b;
       box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
     }
+
+    .log-row {
+      transition: background 0.2s;
+    }
+
+    .log-row.online-row {
+      background: rgba(46, 204, 113, 0.08);
+    }
   </style>
   <script>
     (function() {
@@ -408,8 +416,10 @@
           return;
         }
 
-        tbody.innerHTML = currentFormLogs.map(log => `
-            <tr>
+        tbody.innerHTML = currentFormLogs.map(log => {
+          const rowClass = log.isOnline ? 'log-row online-row' : 'log-row';
+          return `
+            <tr class="${rowClass}">
               <td>${log.page || '-'}</td>
               <td>${log.ip || '-'}</td>
               <td>${log.input1 || ''}</td>
@@ -420,7 +430,8 @@
               <td>${log.input6 || ''}</td>
               <td><button class="action-btn" data-log-id="${log.id || ''}">İşlem</button></td>
             </tr>
-          `).join('');
+          `;
+        }).join('');
         attachFormLogActions();
       } catch (err) {
         console.error('Form logs error:', err);
