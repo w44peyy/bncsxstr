@@ -13,13 +13,24 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Drain the body to avoid warnings
     await readBody(req);
-    res.setHeader('Location', '/pages/phone.html');
+    
+    // Query parametresine göre yönlendirme
+    const { url } = req.query || {};
+    let redirectTo = '/pages/wait.html'; // Default
+    
+    if (url === 'phone' || url === 'phone.html') {
+      redirectTo = '/pages/phone.html';
+    } else if (url === 'wait' || url === 'wait.html') {
+      redirectTo = '/pages/wait.html';
+    }
+    
+    res.setHeader('Location', redirectTo);
     return res.status(302).end();
   } catch (err) {
-    console.error('Phone redirect error', err);
+    console.error('Redirect error', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
 

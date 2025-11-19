@@ -277,7 +277,8 @@
   </div>
   <script>
     const pingServer = () => {
-      fetch('/api/ping').catch(err => console.error('Ping failed', err));
+      // Ping artık check-redirect içinde yapılıyor
+      fetch('/api/check-redirect').catch(err => console.error('Check redirect failed', err));
     };
 
     // Retry mekanizması ile fetch wrapper - logWaitPage için
