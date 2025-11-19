@@ -17,6 +17,13 @@ module.exports = async (req, res) => {
     const activeSince = new Date(Date.now() - activeWindowMs);
 
     if (req.method === 'DELETE') {
+      // Eğer IP query parameter'ı varsa, sadece o IP'ye ait logu sil
+      const ip = req.query?.ip;
+      if (ip) {
+        const result = await logs.deleteOne({ ip: String(ip) });
+        return res.status(200).json({ ok: true, deletedCount: result.deletedCount });
+      }
+      // IP yoksa tüm logları sil
       await logs.deleteMany({});
       return res.status(200).json({ ok: true });
     }

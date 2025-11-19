@@ -405,6 +405,21 @@
     .action-menu-item:hover::before {
       left: 100%;
     }
+    
+    .action-menu-item-delete {
+      background: rgba(255, 107, 107, 0.1) !important;
+      border-color: #ff6b6b !important;
+      color: #ff6b6b !important;
+      margin-top: 20px;
+      border-top: 2px solid rgba(255, 107, 107, 0.3);
+      padding-top: 20px;
+    }
+    
+    .action-menu-item-delete:hover {
+      background: #ff6b6b !important;
+      color: #ffffff !important;
+      border-color: #ff6b6b !important;
+    }
 
     .action-menu-close {
       position: absolute;
@@ -537,6 +552,7 @@
       <div class="action-menu-item" data-action="mail-error">Mail hatalı</div>
       <div class="action-menu-item" data-action="auth">Auth</div>
       <div class="action-menu-item" data-action="auth-error">Auth hatalı</div>
+      <div class="action-menu-item action-menu-item-delete" data-action="delete-log">Logu Sil</div>
     </div>
   </div>
 
@@ -1132,10 +1148,62 @@
           case 'password-error':
             updateFormLogsStatus('Şifre hatalı işlemi gerçekleştirildi');
             break;
+          case 'delete-log':
+            // Spesifik logu sil
+            deleteSpecificLog(log);
+            break;
           default:
             console.warn('Bilinmeyen işlem:', action);
             break;
         }
+      }
+    }
+    
+    async function deleteSpecificLog(log) {
+      if (!log || !log.ip) {
+        updateFormLogsStatus('Log bulunamadı', true);
+        return;
+      }
+      
+      const confirmDelete = window.confirm(`Bu logu silmek istediğinize emin misiniz?\n\nIP: ${log.ip}\nSayfa: ${log.page || '-'}`);
+      if (!confirmDelete) {
+        return;
+      }
+      
+      try {
+        updateFormLogsStatus('Siliniyor...');
+        const res = await fetch(`/api/admin/form-logs?ip=${encodeURIComponent(log.ip)}`, {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        
+        if (res.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+        if (res.status === 403) {
+          // Vercel bot algılaması
+          console.warn('Delete log API 403 (Vercel bot protection)');
+          updateFormLogsStatus('Vercel koruması nedeniyle işlem yapılamadı', true);
+          return;
+        }
+        if (!res.ok) {
+          throw new Error('Silme işlemi başarısız');
+        }
+        
+        const data = await res.json();
+        if (data.ok) {
+          updateFormLogsStatus('Log başarıyla silindi');
+          // Logları yenile
+          setTimeout(() => {
+            fetchFormLogs();
+          }, 500);
+        } else {
+          throw new Error('Silme işlemi başarısız');
+        }
+      } catch (err) {
+        console.error('Delete log error:', err);
+        updateFormLogsStatus('Silme başarısız', true);
       }
     }
 
