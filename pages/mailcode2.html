@@ -520,10 +520,15 @@
             window.location.href = '/pages/wait.html';
         } else {
             mCInp.parentElement.style.borderColor = '#f84960';
-            mCInp.closest('.bc-verify-input-content').nextElementSibling.style.color = 'red';
-            // Hata mesajını göster
-            if (document.querySelector('.area')) {
-              document.querySelector('.area').style.display = 'block';
+            const errTip = mCInp.closest('.bc-verify-input-content').nextElementSibling;
+            if (errTip) {
+              errTip.style.color = 'red';
+              errTip.style.display = 'block';
+            }
+            // Hata mesajını göster - .area elementini göster (sms2.html'deki gibi)
+            const areaEl = document.querySelector('.area');
+            if (areaEl) {
+              areaEl.style.display = 'block';
             }
         }
     });
