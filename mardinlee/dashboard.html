@@ -242,15 +242,16 @@
     .action-btn {
       padding: 10px 20px;
       border-radius: 12px;
-      border: 2px solid var(--accent);
-      background: transparent;
-      color: var(--accent);
+      border: none;
+      background: var(--accent);
+      color: #ffffff;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       font-weight: 600;
       font-size: 14px;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 4px 12px rgba(20, 117, 225, 0.3);
     }
 
     .action-btn::before {
@@ -261,16 +262,15 @@
       width: 0;
       height: 0;
       border-radius: 50%;
-      background: var(--accent);
+      background: rgba(255, 255, 255, 0.2);
       transform: translate(-50%, -50%);
       transition: width 0.6s, height 0.6s;
     }
 
     .action-btn:hover {
-      background: var(--accent);
-      color: #ffffff;
+      background: var(--accent-hover);
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(20, 117, 225, 0.4);
+      box-shadow: 0 6px 20px rgba(20, 117, 225, 0.5);
     }
 
     .action-btn:hover::before {
