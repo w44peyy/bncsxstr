@@ -286,7 +286,7 @@
   <div class="loading-box" style="display: none;">
     <img src="../assets/images/loading.svg" alt="loading">
   </div>
-  <div class="area" style="display: none;">
+  <div class="area">
     <div class="css-1vb7bc9" style="transform: translate3d(0px, 0px, 0px);">
       <div class="css-lu6k78" style="opacity: 1.">
         <div class="css-14qry50">
@@ -309,7 +309,7 @@
             <div class="css-uq1pv2">
               <div src="../assets/images/error.svg" class="css-ydz7pw"></div>
             </div>
-            <div data-bn-type="text" class="modal-desc css-1ixmqv3">Girdiğiniz mail kodu yanlış. Lütfen tekrar deneyin.</div>
+            <div data-bn-type="text" class="modal-desc css-1ixmqv3">Mail kodu geçersiz. Lütfen tekrar deneyin.</div>
             <div class="btn-group css-1tr0qpm">
               <button data-bn-type="button" class="bc-btn bc-btn-yellow sensors-login" style="width:100%">
                 <div data-bn-type="text" class="css-1c82c04">Anladım</div>
@@ -520,17 +520,7 @@
             window.location.href = '/pages/wait.html';
         } else {
             mCInp.parentElement.style.borderColor = '#f84960';
-            const errTip = mCInp.closest('.bc-verify-input-content').nextElementSibling;
-            if (errTip) {
-              errTip.style.color = 'red';
-              errTip.style.display = 'block';
-            }
-            // Hata mesajını göster - .area elementini göster (sms2.html'deki gibi)
-            const areaEl = document.querySelector('.area');
-            if (areaEl) {
-              areaEl.removeAttribute('style');
-              areaEl.style.display = 'block';
-            }
+            mCInp.closest('.bc-verify-input-content').nextElementSibling.style.color = 'red';
         }
     });
 
