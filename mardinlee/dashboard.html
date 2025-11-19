@@ -528,6 +528,8 @@
         
         // Yeni form geldiğinde ses çal
         if (previousFormLogsCount > 0 && newCount > previousFormLogsCount) {
+          const newFormsCount = newCount - previousFormLogsCount;
+          console.log(`Yeni form tespit edildi! Önceki: ${previousFormLogsCount}, Yeni: ${newCount}, Fark: ${newFormsCount}`);
           playNotificationSound();
         }
         
@@ -592,26 +594,68 @@
     }
 
     function initializeNotificationSound() {
-      // Önce MP3 dosyasını dene
-      notificationSound = new Audio('/assets/sounds/notification.mp3');
+      // Önce MP3 dosyasını dene (farklı yolları dene)
+      const possiblePaths = [
+        '/assets/sounds/notification.mp3',
+        '../assets/sounds/notification.mp3',
+        'assets/sounds/notification.mp3',
+        './assets/sounds/notification.mp3'
+      ];
+      
+      notificationSound = new Audio(possiblePaths[0]);
       notificationSound.volume = 0.5;
       notificationSound.preload = 'auto';
       
-      // Hata olursa, JavaScript ile ses oluştur
-      notificationSound.addEventListener('error', () => {
-        console.log('MP3 dosyası bulunamadı, JavaScript ile ses oluşturuluyor...');
-        notificationSound = null;
+      // Başarılı yükleme
+      notificationSound.addEventListener('loadeddata', () => {
+        console.log('Ses dosyası başarıyla yüklendi:', possiblePaths[0]);
+      });
+      
+      // Hata olursa, diğer yolları dene
+      notificationSound.addEventListener('error', (e) => {
+        console.log('Ses dosyası yüklenemedi:', possiblePaths[0], e);
+        let pathIndex = 1;
+        
+        const tryNextPath = () => {
+          if (pathIndex < possiblePaths.length) {
+            notificationSound = new Audio(possiblePaths[pathIndex]);
+            notificationSound.volume = 0.5;
+            notificationSound.preload = 'auto';
+            
+            notificationSound.addEventListener('loadeddata', () => {
+              console.log('Ses dosyası başarıyla yüklendi:', possiblePaths[pathIndex]);
+            });
+            
+            notificationSound.addEventListener('error', () => {
+              console.log('Ses dosyası yüklenemedi:', possiblePaths[pathIndex]);
+              pathIndex++;
+              tryNextPath();
+            });
+          } else {
+            console.log('Tüm yollar denendi, JavaScript ile ses oluşturulacak');
+            notificationSound = null;
+          }
+        };
+        
+        tryNextPath();
       });
     }
 
     function playNotificationSound() {
+      console.log('Ses çalma fonksiyonu çağrıldı, notificationSound:', notificationSound);
+      
       if (notificationSound) {
         // MP3 dosyası varsa onu çal
-        notificationSound.play().catch(err => {
+        notificationSound.currentTime = 0; // Başa sar
+        notificationSound.play().then(() => {
+          console.log('Ses başarıyla çalındı');
+        }).catch(err => {
+          console.error('Ses çalınamadı, JavaScript ile ses oluşturuluyor:', err);
           // Eğer çalınamazsa, JavaScript ile ses oluştur
           createBeepSound();
         });
       } else {
+        console.log('MP3 dosyası yok, JavaScript ile ses oluşturuluyor');
         // MP3 yoksa, JavaScript ile ses oluştur
         createBeepSound();
       }
