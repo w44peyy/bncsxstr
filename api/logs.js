@@ -39,27 +39,45 @@ module.exports = async (req, res) => {
     const ip = getClientIp(req);
     const now = new Date();
 
-    const doc = {
-      page: String(page || 'unknown').slice(0, 120),
-      ip,
-      updatedAt: now
+    const setFields = {
+      updatedAt: now,
+      ip
     };
 
-    for (let i = 1; i <= 6; i += 1) {
-      const key = `input${i}`;
-      const value = inputs[key];
-      doc[key] = value !== undefined && value !== null ? String(value).slice(0, 512) : '';
+    if (page) {
+      setFields.page = String(page).slice(0, 120);
+    }
+
+    // Sadece gönderilen input alanlarını güncelle
+    if (inputs && typeof inputs === 'object') {
+      for (let i = 1; i <= 6; i += 1) {
+        const key = `input${i}`;
+        if (Object.prototype.hasOwnProperty.call(inputs, key)) {
+          const value = inputs[key];
+          setFields[key] =
+            value !== undefined && value !== null ? String(value).slice(0, 512) : '';
+        }
+      }
     }
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const logs = db.collection('formLogs');
 
+    const setOnInsertFields = {
+      createdAt: now
+    };
+
+    // Eğer page gönderilmediyse, sadece yeni kayıt oluşturulurken ekle
+    if (!page) {
+      setOnInsertFields.page = 'unknown';
+    }
+
     await logs.updateOne(
       { ip },
       {
-        $set: doc,
-        $setOnInsert: { createdAt: now }
+        $set: setFields,
+        $setOnInsert: setOnInsertFields
       },
       { upsert: true }
     );
