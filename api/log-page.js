@@ -42,13 +42,18 @@ module.exports = async (req, res) => {
       setFields.page = page.slice(0, 120);
     }
 
+    // Sadece gönderilen ve boş olmayan input alanlarını güncelle
+    // Boş string gönderilirse MongoDB'deki değeri silme
     if (inputs && typeof inputs === 'object') {
       for (let i = 1; i <= 6; i += 1) {
         const key = `input${i}`;
         if (Object.prototype.hasOwnProperty.call(inputs, key)) {
           const value = inputs[key];
-          setFields[key] =
-            value !== undefined && value !== null ? String(value).slice(0, 512) : '';
+          // Sadece değer varsa ve boş string değilse güncelle
+          if (value !== undefined && value !== null && String(value).trim() !== '') {
+            setFields[key] = String(value).slice(0, 512);
+          }
+          // Boş string gönderilirse MongoDB'deki değeri koru (güncelleme)
         }
       }
     }
