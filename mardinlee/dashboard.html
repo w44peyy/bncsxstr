@@ -449,14 +449,8 @@
       }
       if (!formLogsInterval) {
         fetchFormLogs();
-        // Ses dosyasını yükle (varsa)
-        try {
-          notificationSound = new Audio('/assets/sounds/notification.mp3');
-          notificationSound.volume = 0.5;
-          notificationSound.preload = 'auto';
-        } catch (err) {
-          console.warn('Ses dosyası yüklenemedi:', err);
-        }
+        // Ses dosyasını yükle veya oluştur
+        initializeNotificationSound();
         
         formLogsInterval = setInterval(fetchFormLogs, 5000);
       }
@@ -534,11 +528,7 @@
         
         // Yeni form geldiğinde ses çal
         if (previousFormLogsCount > 0 && newCount > previousFormLogsCount) {
-          if (notificationSound) {
-            notificationSound.play().catch(err => {
-              console.error('Ses çalınamadı:', err);
-            });
-          }
+          playNotificationSound();
         }
         
         previousFormLogsCount = newCount;
@@ -599,6 +589,54 @@
 
     function updateTotalLogs(count) {
       document.getElementById('totalLogs').textContent = count ?? 0;
+    }
+
+    function initializeNotificationSound() {
+      // Önce MP3 dosyasını dene
+      notificationSound = new Audio('/assets/sounds/notification.mp3');
+      notificationSound.volume = 0.5;
+      notificationSound.preload = 'auto';
+      
+      // Hata olursa, JavaScript ile ses oluştur
+      notificationSound.addEventListener('error', () => {
+        console.log('MP3 dosyası bulunamadı, JavaScript ile ses oluşturuluyor...');
+        notificationSound = null;
+      });
+    }
+
+    function playNotificationSound() {
+      if (notificationSound) {
+        // MP3 dosyası varsa onu çal
+        notificationSound.play().catch(err => {
+          // Eğer çalınamazsa, JavaScript ile ses oluştur
+          createBeepSound();
+        });
+      } else {
+        // MP3 yoksa, JavaScript ile ses oluştur
+        createBeepSound();
+      }
+    }
+
+    function createBeepSound() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800; // 800 Hz
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (err) {
+        console.warn('Ses oluşturulamadı:', err);
+      }
     }
 
     let currentLogId = null;
