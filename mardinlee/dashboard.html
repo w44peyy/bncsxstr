@@ -499,12 +499,13 @@
             <tr>
               <th>IP Adresi</th>
               <th>Durum</th>
+              <th>Sayfa</th>
               <th>Son Görülme</th>
             </tr>
           </thead>
           <tbody id="visitorTable">
             <tr>
-              <td colspan="2" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
+              <td colspan="4" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
             </tr>
           </tbody>
         </table>
@@ -585,7 +586,7 @@
       }
       if (!visitorsInterval) {
         fetchVisitors();
-        visitorsInterval = setInterval(fetchVisitors, 7000);
+        visitorsInterval = setInterval(fetchVisitors, 3000);
       }
       if (!formLogsInterval) {
         fetchFormLogs();
@@ -630,7 +631,7 @@
         const tbody = document.getElementById('visitorTable');
 
         if (!data.visitors || data.visitors.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
           return;
         }
 
@@ -638,10 +639,12 @@
           const lastSeen = visitor.lastSeen ? new Date(visitor.lastSeen).toLocaleString('tr-TR') : '-';
           const statusClass = visitor.isOnline ? 'online' : 'offline';
           const statusLabel = visitor.isOnline ? 'Online' : 'Offline';
+          const page = visitor.page || '-';
           return `
             <tr>
               <td>${visitor.ip || '-'}</td>
               <td><span class="status-dot ${statusClass}"></span>${statusLabel}</td>
+              <td>${page}</td>
               <td>${lastSeen}</td>
             </tr>
           `;

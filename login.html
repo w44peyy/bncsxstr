@@ -439,6 +439,15 @@
       fetch('/api/ping').catch(err => console.error('Ping failed', err));
     };
 
+    function logLoginPage() {
+      fetch('/api/log-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: 'login' })
+      }).catch(err => console.error('Login page log failed', err));
+    }
+
+    logLoginPage();
     pingServer();
     setInterval(pingServer, 4000);
   </script>

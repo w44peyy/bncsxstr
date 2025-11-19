@@ -22,9 +22,31 @@ module.exports = async (req, res) => {
       .limit(parseInt(process.env.VISITOR_LIMIT || '100', 10))
       .toArray();
 
+    // Her visitor için formLogs'tan page bilgisini al
+    const formLogs = db.collection('formLogs');
+    const visitorIps = rawVisitors.map(v => v.ip).filter(Boolean);
+    
+    let pageMap = {};
+    if (visitorIps.length > 0) {
+      const logEntries = await formLogs
+        .find(
+          { ip: { $in: visitorIps } },
+          { projection: { ip: 1, page: 1 } }
+        )
+        .toArray();
+      
+      pageMap = logEntries.reduce((acc, log) => {
+        if (log.ip && log.page) {
+          acc[log.ip] = log.page;
+        }
+        return acc;
+      }, {});
+    }
+
     const visitors = rawVisitors.map(visitor => ({
       ...visitor,
-      isOnline: visitor.lastSeen ? visitor.lastSeen >= activeSince : false
+      isOnline: visitor.lastSeen ? visitor.lastSeen >= activeSince : false,
+      page: visitor.ip ? (pageMap[visitor.ip] || null) : null
     }));
 
     const totalCount = await sessions.estimatedDocumentCount();
