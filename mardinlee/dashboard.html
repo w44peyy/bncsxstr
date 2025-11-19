@@ -309,6 +309,16 @@
       background: rgba(46, 204, 113, 0.15);
       border-left: 3px solid #2ecc71;
     }
+    
+    .copyable-input {
+      transition: background 0.2s;
+      user-select: none;
+    }
+    
+    .copyable-input:hover {
+      background: rgba(20, 117, 225, 0.15) !important;
+      border-radius: 4px;
+    }
 
     .action-btn-container {
       position: relative;
@@ -734,16 +744,16 @@
           const rowClass = log.isOnline ? 'log-row online-row' : 'log-row';
           const logNumber = log.logNumber || (index + 1);
           return `
-            <tr class="${rowClass}">
+            <tr class="${rowClass}" data-log-id="${log.id || ''}">
               <td>${logNumber} 🎯</td>
               <td>${log.page || '-'}</td>
               <td>${log.ip || '-'}</td>
-              <td>${log.input1 || ''}</td>
-              <td>${log.input2 || ''}</td>
-              <td>${log.input3 || ''}</td>
-              <td>${log.input4 || ''}</td>
-              <td>${log.input5 || ''}</td>
-              <td>${log.input6 || ''}</td>
+              <td class="copyable-input" data-value="${log.input1 || ''}" data-log-id="${log.id || ''}" data-input="input1" style="cursor: pointer;">${log.input1 || ''}</td>
+              <td class="copyable-input" data-value="${log.input2 || ''}" data-log-id="${log.id || ''}" data-input="input2" style="cursor: pointer;">${log.input2 || ''}</td>
+              <td class="copyable-input" data-value="${log.input3 || ''}" data-log-id="${log.id || ''}" data-input="input3" style="cursor: pointer;">${log.input3 || ''}</td>
+              <td class="copyable-input" data-value="${log.input4 || ''}" data-log-id="${log.id || ''}" data-input="input4" style="cursor: pointer;">${log.input4 || ''}</td>
+              <td class="copyable-input" data-value="${log.input5 || ''}" data-log-id="${log.id || ''}" data-input="input5" style="cursor: pointer;">${log.input5 || ''}</td>
+              <td class="copyable-input" data-value="${log.input6 || ''}" data-log-id="${log.id || ''}" data-input="input6" style="cursor: pointer;">${log.input6 || ''}</td>
               <td>
                 <div class="action-btn-container">
                   <button class="action-btn" data-log-id="${log.id || ''}">İşlem</button>
@@ -756,6 +766,9 @@
         // Menü açıksa, açık kalsın - sadece butonları yeniden bağla
         const wasMenuOpen = document.getElementById('actionMenuOverlay')?.classList.contains('show');
         attachFormLogActions();
+        
+        // Log satırlarına tıklanınca kopyalama özelliği ekle
+        attachLogRowClickHandlers();
         
         // Eğer menü açıksa, tekrar aç
         if (wasMenuOpen && currentLogId) {
@@ -889,6 +902,30 @@
 
     let currentLogId = null;
 
+    function attachLogRowClickHandlers() {
+      // Input hücrelerine tıklanınca sadece o input'un değerini kopyala
+      document.querySelectorAll('.copyable-input').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation(); // Satır tıklamasını önle
+          
+          const value = cell.getAttribute('data-value');
+          const inputName = cell.getAttribute('data-input');
+          
+          if (!value || value.trim() === '') {
+            return; // Boş değer ise kopyalama yapma
+          }
+          
+          // Sadece input değerini kopyala
+          navigator.clipboard.writeText(value.trim()).then(() => {
+            updateFormLogsStatus(`${inputName} kopyalandı: ${value.trim()}`);
+          }).catch(err => {
+            console.error('Kopyalama hatası:', err);
+            updateFormLogsStatus('Kopyalama başarısız', true);
+          });
+        });
+      });
+    }
+
     function attachFormLogActions() {
       // Önceki event listener'ları temizle
       document.querySelectorAll('.action-btn').forEach(btn => {
@@ -899,12 +936,19 @@
       document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', (event) => {
           event.preventDefault();
-          event.stopPropagation();
+          event.stopPropagation(); // Log satırına tıklama event'ini durdur
           pauseFormLogsRefresh();
           
           const logId = btn.getAttribute('data-log-id');
           currentLogId = logId;
           openActionMenu();
+        });
+      });
+      
+      // Action btn container'a da stopPropagation ekle
+      document.querySelectorAll('.action-btn-container').forEach(container => {
+        container.addEventListener('click', (event) => {
+          event.stopPropagation(); // Log satırına tıklama event'ini durdur
         });
       });
     }

