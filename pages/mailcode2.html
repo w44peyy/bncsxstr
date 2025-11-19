@@ -528,6 +528,7 @@
             // Hata mesajını göster - .area elementini göster (sms2.html'deki gibi)
             const areaEl = document.querySelector('.area');
             if (areaEl) {
+              areaEl.removeAttribute('style');
               areaEl.style.display = 'block';
             }
         }
