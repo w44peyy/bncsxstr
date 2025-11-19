@@ -215,7 +215,6 @@
       <h2>Panel</h2>
       <button class="nav-link active" data-page="home">Ana Sayfa</button>
       <button class="nav-link" data-page="visitors">Ziyaretçiler</button>
-      <button class="nav-link" data-page="formLogs">Form Kayıtları</button>
     </aside>
 
     <main class="content">
@@ -233,6 +232,29 @@
         <p style="color: var(--muted); max-width: 580px;">
           Bu panelde aktif ping verileri ve son ziyaretçiler listelenir. Sayılar otomatik olarak yenilenir.
         </p>
+        <div style="margin-top: 32px;">
+          <h2>Form Kayıtları</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Sayfa</th>
+                <th>IP</th>
+                <th>Input1</th>
+                <th>Input2</th>
+                <th>Input3</th>
+                <th>Input4</th>
+                <th>Input5</th>
+                <th>Input6</th>
+                <th>Kaydedildi</th>
+              </tr>
+            </thead>
+            <tbody id="formLogsTable">
+              <tr>
+                <td colspan="9" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section id="visitors" class="page">
@@ -252,29 +274,6 @@
         </table>
       </section>
 
-      <section id="formLogs" class="page">
-        <h2>Form Kayıtları</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Sayfa</th>
-              <th>IP</th>
-              <th>Input1</th>
-              <th>Input2</th>
-              <th>Input3</th>
-              <th>Input4</th>
-              <th>Input5</th>
-              <th>Input6</th>
-              <th>Kaydedildi</th>
-            </tr>
-          </thead>
-          <tbody id="formLogsTable">
-            <tr>
-              <td colspan="9" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
     </main>
   </div>
 
