@@ -582,6 +582,9 @@
     let currentFormLogs = [];
     let formLogsRefreshPaused = false;
     let previousFormLogsCount = 0;
+    let previousTotalCount = 0;
+    let previousLogIds = new Set();
+    let lastCheckTime = Date.now();
     let notificationSound = null;
     let formLogsResumeTimer = null;
 
@@ -750,20 +753,68 @@
 
         const newFormLogs = data.logs || [];
         const newCount = newFormLogs.length;
+        const newTotal = data.total ?? newCount;
+        
+        // Yeni logları tespit et - birden fazla yöntemle kontrol et
+        const currentLogIds = new Set(newFormLogs.map(log => log.id || '').filter(Boolean));
+        const currentTime = Date.now();
+        const timeSinceLastCheck = currentTime - lastCheckTime;
+        const recentThreshold = 5000; // Son 5 saniye içinde güncellenen loglar yeni sayılır
+        
+        let hasNewLogs = false;
+        
+        // İlk yükleme değilse kontrol yap
+        if (previousLogIds.size > 0 || previousTotalCount > 0) {
+          // 1. Yeni ID'ler var mı kontrol et (yeni log oluşturulmuş)
+          for (const id of currentLogIds) {
+            if (!previousLogIds.has(id)) {
+              hasNewLogs = true;
+              console.log(`Yeni log ID tespit edildi: ${id}`);
+              break;
+            }
+          }
+          
+          // 2. Total sayısı arttıysa (yeni log oluşturulmuş)
+          if (!hasNewLogs && previousTotalCount > 0 && newTotal > previousTotalCount) {
+            hasNewLogs = true;
+            console.log(`Total sayısı arttı: ${previousTotalCount} -> ${newTotal}`);
+          }
+          
+          // 3. Son güncellenen loglar var mı kontrol et (yeni form gönderilmiş ama aynı IP, log güncellenmiş)
+          if (!hasNewLogs && newFormLogs.length > 0) {
+            // En üstteki logları kontrol et (en son güncellenenler)
+            const recentLogs = newFormLogs.slice(0, 3); // En üstteki 3 logu kontrol et
+            for (const log of recentLogs) {
+              if (log.updatedAt) {
+                const updatedAt = log.updatedAt instanceof Date ? log.updatedAt.getTime() : new Date(log.updatedAt).getTime();
+                const timeSinceUpdate = currentTime - updatedAt;
+                
+                // Eğer log son 5 saniye içinde güncellendiyse ve önceki kontrol zamanından sonraysa
+                if (timeSinceUpdate < recentThreshold && updatedAt > lastCheckTime - 2000) {
+                  hasNewLogs = true;
+                  console.log(`Yeni güncellenen log tespit edildi: ID=${log.id}, updatedAt=${new Date(updatedAt).toISOString()}, ${Math.round(timeSinceUpdate / 1000)}s önce`);
+                  break;
+                }
+              }
+            }
+          }
+        } else {
+          // İlk yükleme - sayacı ayarla ama ses çalma
+          console.log(`İlk yükleme: ${newTotal} form bulundu`);
+        }
         
         // Yeni form geldiğinde ses çal
-        if (previousFormLogsCount > 0 && newCount > previousFormLogsCount) {
-          const newFormsCount = newCount - previousFormLogsCount;
-          console.log(`Yeni form tespit edildi! Önceki: ${previousFormLogsCount}, Yeni: ${newCount}, Fark: ${newFormsCount}`);
+        if (hasNewLogs) {
+          console.log(`✅ Yeni form tespit edildi! Ses çalınıyor... Önceki total: ${previousTotalCount}, Yeni total: ${newTotal}`);
           playNotificationSound();
-        } else if (previousFormLogsCount === 0 && newCount > 0) {
-          // İlk yükleme - sayacı ayarla ama ses çalma
-          console.log(`İlk yükleme: ${newCount} form bulundu`);
         }
         
         previousFormLogsCount = newCount;
+        previousTotalCount = newTotal;
+        previousLogIds = new Set(currentLogIds);
+        lastCheckTime = currentTime;
         currentFormLogs = newFormLogs;
-        updateTotalLogs(data.total ?? currentFormLogs.length);
+        updateTotalLogs(newTotal);
 
         if (!currentFormLogs.length) {
           tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
