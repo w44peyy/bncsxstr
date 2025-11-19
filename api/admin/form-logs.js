@@ -71,11 +71,31 @@ module.exports = async (req, res) => {
       onlineIpSet = new Set(onlineRecords.map(record => record.ip));
     }
 
-    const serialized = itemsWithLogNumber.map(item => ({
-      ...item,
-      id: item._id?.toString() || '',
-      isOnline: item.ip ? onlineIpSet.has(item.ip) : false
-    }));
+    // Response dönen kullanıcıları da online yap - eğer updatedAt çok yakınsa online say
+    const recentResponseWindowMs = 5000; // Son 5 saniyede response dönen kullanıcılar online
+    const recentResponseSince = new Date(Date.now() - recentResponseWindowMs);
+
+    const serialized = itemsWithLogNumber.map(item => {
+      let isOnline = false;
+      if (item.ip) {
+        // Sessions'dan kontrol
+        isOnline = onlineIpSet.has(item.ip);
+        
+        // Eğer sessions'da yoksa ama son 5 saniyede updatedAt varsa online say
+        if (!isOnline && item.updatedAt) {
+          const updatedAt = item.updatedAt instanceof Date ? item.updatedAt : new Date(item.updatedAt);
+          if (updatedAt >= recentResponseSince) {
+            isOnline = true;
+          }
+        }
+      }
+      
+      return {
+        ...item,
+        id: item._id?.toString() || '',
+        isOnline
+      };
+    });
 
     return res.status(200).json({
       logs: serialized,

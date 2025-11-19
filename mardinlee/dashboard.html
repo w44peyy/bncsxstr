@@ -582,18 +582,18 @@
     function startPolling() {
       if (!statsInterval) {
         fetchStats();
-        statsInterval = setInterval(fetchStats, 5000);
+        statsInterval = setInterval(fetchStats, 2000);
       }
       if (!visitorsInterval) {
         fetchVisitors();
-        visitorsInterval = setInterval(fetchVisitors, 3000);
+        visitorsInterval = setInterval(fetchVisitors, 2000);
       }
       if (!formLogsInterval) {
         fetchFormLogs();
         // Ses dosyasını yükle veya oluştur
         initializeNotificationSound();
         
-        formLogsInterval = setInterval(fetchFormLogs, 5000);
+        formLogsInterval = setInterval(fetchFormLogs, 2000);
       }
     }
 

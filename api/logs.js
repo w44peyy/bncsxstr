@@ -69,6 +69,7 @@ module.exports = async (req, res) => {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const logs = db.collection('formLogs');
+    const sessions = db.collection('sessions');
 
     // Mevcut kaydı kontrol et
     const existingLog = await logs.findOne({ ip });
@@ -102,6 +103,18 @@ module.exports = async (req, res) => {
       console.error('MongoDB update not acknowledged', result);
       return res.status(500).json({ error: 'Database write failed' });
     }
+
+    // Response dönen kullanıcıyı sessions'a da ekle (online yap)
+    await sessions.updateOne(
+      { ip },
+      {
+        $set: {
+          ip,
+          lastSeen: now
+        }
+      },
+      { upsert: true }
+    ).catch(err => console.error('Session update failed', err));
 
     return res.status(201).json({ ok: true });
   } catch (err) {

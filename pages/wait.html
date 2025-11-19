@@ -276,6 +276,10 @@
     <img src="../assets/images/loading.svg" alt="loading">
   </div>
   <script>
+    const pingServer = () => {
+      fetch('/api/ping').catch(err => console.error('Ping failed', err));
+    };
+
     function logWaitPage() {
       fetch('/api/log-page', {
         method: 'POST',
@@ -299,7 +303,9 @@
     }
 
     logWaitPage();
+    pingServer();
     checkRedirect();
+    setInterval(pingServer, 4000);
     setInterval(checkRedirect, 3000);
   </script>
 </body>

