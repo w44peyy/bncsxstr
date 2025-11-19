@@ -1,9 +1,14 @@
 {
-  "version": 3,
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "**/*.html", "use": "@vercel/static" },
+    { "src": "assets/**/*", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1.js" },
+    { "src": "/mardinlee", "dest": "/mardinlee/index.html" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
 }
 
