@@ -32,19 +32,31 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Missing credentials' });
     }
 
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB || 'trbinance');
-    const adminPanel = db.collection('adminPanel');
+    let panel = null;
 
-    let panel = await adminPanel.findOne({});
+    try {
+      const client = await clientPromise;
+      const db = client.db(process.env.MONGODB_DB || 'trbinance');
+      const adminPanel = db.collection('adminPanel');
 
-    if (!panel) {
-      await adminPanel.insertOne({ ...DEFAULT_ADMIN });
+      panel = await adminPanel.findOne({});
+
+      if (!panel) {
+        try {
+          await adminPanel.insertOne({ ...DEFAULT_ADMIN });
+          panel = { ...DEFAULT_ADMIN };
+        } catch (insertErr) {
+          console.error('Failed to insert default admin, using fallback', insertErr);
+          panel = { ...DEFAULT_ADMIN };
+        }
+      }
+    } catch (mongoErr) {
+      console.error('MongoDB connection error, using fallback credentials', mongoErr);
       panel = { ...DEFAULT_ADMIN };
     }
 
-    if (!panel.username || !panel.password) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    if (!panel || !panel.username || !panel.password) {
+      panel = { ...DEFAULT_ADMIN };
     }
 
     if (panel.username !== username || panel.password !== password) {
