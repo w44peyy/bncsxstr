@@ -26,10 +26,11 @@ module.exports = async (req, res) => {
       500
     );
 
+    const sortOrder = { updatedAt: -1, createdAt: -1 };
     const [items, total] = await Promise.all([
       logs
         .find({})
-        .sort({ createdAt: -1 })
+        .sort(sortOrder)
         .limit(limit)
         .toArray(),
       logs.estimatedDocumentCount()

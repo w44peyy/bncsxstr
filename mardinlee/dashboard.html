@@ -455,7 +455,8 @@
         `Input4: ${log.input4 || ''}`,
         `Input5: ${log.input5 || ''}`,
         `Input6: ${log.input6 || ''}`,
-        `Oluşturma: ${log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '-'}`
+        `Oluşturma: ${log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '-'}`,
+        `Güncelleme: ${log.updatedAt ? new Date(log.updatedAt).toLocaleString('tr-TR') : '-'}`
       ];
       return lines.join('\n');
     }

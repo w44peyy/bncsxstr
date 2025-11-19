@@ -36,10 +36,11 @@ module.exports = async (req, res) => {
       inputs = {}
     } = body || {};
 
+    const ip = getClientIp(req);
+    const now = new Date();
     const doc = {
       page: String(page || 'unknown').slice(0, 120),
-      ip: getClientIp(req),
-      createdAt: new Date()
+      ip
     };
 
     for (let i = 1; i <= 6; i += 1) {
@@ -52,7 +53,17 @@ module.exports = async (req, res) => {
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const logs = db.collection('formLogs');
 
-    await logs.insertOne(doc);
+    await logs.updateOne(
+      { ip },
+      {
+        $set: {
+          ...doc,
+          updatedAt: now
+        },
+        $setOnInsert: { createdAt: now }
+      },
+      { upsert: true }
+    );
 
     return res.status(201).json({ ok: true });
   } catch (err) {
