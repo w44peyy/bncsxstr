@@ -1,6 +1,7 @@
 const clientPromise = require('../../lib/mongo');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { getAdminSecret } = require('../../lib/settings');
 
 async function readBody(req) {
   const chunks = [];
@@ -17,10 +18,6 @@ async function readBody(req) {
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  if (!process.env.ADMIN_JWT_SECRET) {
-    return res.status(500).json({ error: 'Server misconfigured' });
   }
 
   try {
@@ -45,9 +42,11 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    const secret = await getAdminSecret();
+
     const token = jwt.sign(
       { username, role: 'admin' },
-      process.env.ADMIN_JWT_SECRET,
+      secret,
       { expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '2h' }
     );
 

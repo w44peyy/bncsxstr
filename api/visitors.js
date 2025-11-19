@@ -7,7 +7,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    verifyAdmin(req);
+    await verifyAdmin(req);
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
@@ -28,6 +28,9 @@ module.exports = async (req, res) => {
   } catch (err) {
     if (err.code === 401) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (err.code === 500) {
+      return res.status(500).json({ error: 'Server misconfigured' });
     }
     console.error('Visitors API error', err);
     return res.status(500).json({ error: 'Internal server error' });
