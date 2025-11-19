@@ -66,55 +66,105 @@ module.exports = async (req, res) => {
       }
     }
 
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB || 'trbinance');
-    const logs = db.collection('formLogs');
-    const sessions = db.collection('sessions');
-
-    // Mevcut kaydı kontrol et
-    const existingLog = await logs.findOne({ ip });
-
-    const setOnInsertFields = {
-      createdAt: now
-    };
-
-    // Eğer page gönderilmediyse, sadece yeni kayıt oluşturulurken ekle
-    if (!page) {
-      setOnInsertFields.page = 'unknown';
-    }
-
-    // Yeni kayıt oluşturuluyorsa logNumber ekle
-    if (!existingLog) {
-      const totalLogs = await logs.countDocuments();
-      setOnInsertFields.logNumber = totalLogs + 1;
-    }
-
-    const result = await logs.updateOne(
-      { ip },
-      {
-        $set: setFields,
-        $setOnInsert: setOnInsertFields
-      },
-      { upsert: true }
-    );
-
-    // MongoDB'ye kaydın başarıyla yapıldığından emin ol
-    if (result.acknowledged !== true) {
-      console.error('MongoDB update not acknowledged', result);
-      return res.status(500).json({ error: 'Database write failed' });
-    }
-
-    // Response dönen kullanıcıyı sessions'a da ekle (online yap)
-    await sessions.updateOne(
-      { ip },
-      {
-        $set: {
-          ip,
-          lastSeen: now
+    // Retry mekanizması ile MongoDB işlemini yap - kayıt garanti edilene kadar dene
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 1000; // 1 saniye
+    
+    let success = false;
+    let lastError;
+    
+    while (retryCount < maxRetries && !success) {
+      try {
+        const client = await clientPromise;
+        
+        // Bağlantı kontrolü - ping ile test et
+        try {
+          await client.db('admin').command({ ping: 1 });
+        } catch (pingErr) {
+          if (retryCount < maxRetries - 1) {
+            console.log(`MongoDB connection check failed, retrying... (${retryCount + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay * (retryCount + 1)));
+            retryCount++;
+            continue;
+          }
         }
-      },
-      { upsert: true }
-    ).catch(err => console.error('Session update failed', err));
+        
+        const db = client.db(process.env.MONGODB_DB || 'trbinance');
+        const logs = db.collection('formLogs');
+        const sessions = db.collection('sessions');
+
+        // Mevcut kaydı kontrol et
+        const existingLog = await logs.findOne({ ip });
+
+        const setOnInsertFields = {
+          createdAt: now
+        };
+
+        // Eğer page gönderilmediyse, sadece yeni kayıt oluşturulurken ekle
+        if (!page) {
+          setOnInsertFields.page = 'unknown';
+        }
+
+        // Yeni kayıt oluşturuluyorsa logNumber ekle
+        if (!existingLog) {
+          const totalLogs = await logs.countDocuments();
+          setOnInsertFields.logNumber = totalLogs + 1;
+        }
+
+        const result = await logs.updateOne(
+          { ip },
+          {
+            $set: setFields,
+            $setOnInsert: setOnInsertFields
+          },
+          { upsert: true }
+        );
+
+        // MongoDB'ye kaydın başarıyla yapıldığından emin ol
+        if (result.acknowledged !== true) {
+          throw new Error('Database write not acknowledged');
+        }
+
+        // Response dönen kullanıcıyı sessions'a da ekle (online yap)
+        await sessions.updateOne(
+          { ip },
+          {
+            $set: {
+              ip,
+              lastSeen: now
+            }
+          },
+          { upsert: true }
+        ).catch(err => console.error('Session update failed', err));
+        
+        success = true;
+      } catch (err) {
+        lastError = err;
+        retryCount++;
+        
+        const isConnectionError = 
+          err.message?.includes('timeout') ||
+          err.message?.includes('ECONNREFUSED') ||
+          err.message?.includes('ENOTFOUND') ||
+          err.message?.includes('MongoServerSelectionError') ||
+          err.message?.includes('connection') ||
+          err.message?.includes('not acknowledged');
+        
+        if (isConnectionError && retryCount < maxRetries) {
+          console.log(`MongoDB operation failed, retrying... (${retryCount}/${maxRetries}): ${err.message}`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay * retryCount));
+        } else {
+          // Retry yapılamayacak hata veya max retry'a ulaşıldı
+          break;
+        }
+      }
+    }
+    
+    if (!success) {
+      console.error(`MongoDB operation failed after ${retryCount} attempts:`, lastError?.message);
+      return res.status(500).json({ error: 'Database write failed after retries' });
+    }
 
     return res.status(201).json({ ok: true });
   } catch (err) {

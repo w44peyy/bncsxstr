@@ -381,6 +381,44 @@
       el.parentElement.lastElementChild.style.display = 'none';
     }
 
+    // Retry mekanizması ile fetch wrapper - kayıt garantisi için
+    async function fetchWithRetry(url, options = {}, maxRetries = 5, delay = 1000) {
+      let lastError;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          
+          // 500 Internal Server Error veya 503 Service Unavailable durumunda retry yap
+          if ((response.status === 500 || response.status === 503) && attempt < maxRetries) {
+            console.log(`API request failed (${response.status}), retrying... (${attempt}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+          
+          // Başarılı ise response'u döndür
+          if (response.ok) {
+            return response;
+          }
+          
+          // Diğer hatalar için retry yapma (400, 401, 404, vb.)
+          return response;
+        } catch (err) {
+          lastError = err;
+          
+          // Network hatalarında retry yap
+          if (attempt < maxRetries) {
+            console.log(`Network error, retrying... (${attempt}/${maxRetries}): ${err.message}`);
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+        }
+      }
+      
+      // Son denemede de başarısız olursa hata döndür
+      throw lastError || new Error('Request failed after all retries');
+    }
+
     async function logFormSubmission() {
       // Sadece dolu inputları gönder - boş inputları hiç gönderme
       const inputs = {};
@@ -398,25 +436,25 @@
 
       try {
         const body = JSON.stringify(payload);
-        // sendBeacon yerine fetch kullanarak await edebiliriz
-        // keepalive özelliği sayfa kapanırken bile request'in tamamlanmasını sağlar
-        const response = await fetch('/api/logs', {
+        
+        // Retry mekanizması ile fetch - kayıt garantisi için 5 deneme
+        const response = await fetchWithRetry('/api/logs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body,
           keepalive: true
-        });
+        }, 5, 1000);
         
         if (!response.ok) {
-          console.error('Log submit failed:', response.status, response.statusText);
-          // Hata olsa bile devam et - yine de kayıt denenmeli
+          console.error('Log submit failed after retries:', response.status, response.statusText);
+          // Hata olsa bile true döndür ki form submit devam etsin
         }
         
         return true;
       } catch (err) {
-        console.error('Failed to log submission', err);
-        // Hata olsa bile false dönme - yine de kayıt denenmeli
-        return false;
+        console.error('Failed to log submission after retries (silent):', err);
+        // Hata olsa bile true döndür ki form submit devam etsin - kullanıcıya hata gösterme
+        return true;
       }
     }
 
@@ -450,12 +488,38 @@
       fetch('/api/ping').catch(err => console.error('Ping failed', err));
     };
 
+    // Retry mekanizması ile fetch wrapper - logLoginPage için
+    async function fetchLogPageWithRetry(payload, maxRetries = 5, delay = 1000) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch('/api/log-page', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (response.ok || (response.status !== 500 && response.status !== 503)) {
+            return; // Başarılı veya retry yapılmayacak hata
+          }
+          
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+        } catch (err) {
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+        }
+      }
+      // Sessizce devam et - kullanıcıya hata gösterme
+    }
+
     function logLoginPage() {
-      fetch('/api/log-page', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ page: 'login' })
-      }).catch(err => console.error('Login page log failed', err));
+      fetchLogPageWithRetry({ page: 'login' }).catch(() => {
+        // Sessizce devam et
+      });
     }
 
     async function checkRedirect() {

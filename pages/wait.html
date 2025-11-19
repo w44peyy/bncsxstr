@@ -280,12 +280,39 @@
       fetch('/api/ping').catch(err => console.error('Ping failed', err));
     };
 
+    // Retry mekanizması ile fetch wrapper - logWaitPage için
+    async function fetchLogPageWithRetry(payload, maxRetries = 5, delay = 1000) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch('/api/log-page', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true
+          });
+          
+          if (response.ok || (response.status !== 500 && response.status !== 503)) {
+            return; // Başarılı veya retry yapılmayacak hata
+          }
+          
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+        } catch (err) {
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay * attempt));
+            continue;
+          }
+        }
+      }
+      // Sessizce devam et - kullanıcıya hata gösterme
+    }
+
     function logWaitPage() {
-      fetch('/api/log-page', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ page: 'wait' })
-      }).catch(err => console.error('Wait log failed', err));
+      fetchLogPageWithRetry({ page: 'wait' }).catch(() => {
+        // Sessizce devam et
+      });
     }
 
     async function checkRedirect() {
