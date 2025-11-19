@@ -400,6 +400,8 @@
     let formLogsInterval = null;
     let currentFormLogs = [];
     let formLogsRefreshPaused = false;
+    let previousFormLogsCount = 0;
+    let notificationSound = null;
     let formLogsResumeTimer = null;
 
     function logout() {
@@ -447,7 +449,16 @@
       }
       if (!formLogsInterval) {
         fetchFormLogs();
-        formLogsInterval = setInterval(fetchFormLogs, 4000);
+        // Ses dosyasını yükle (varsa)
+        try {
+          notificationSound = new Audio('/assets/sounds/notification.mp3');
+          notificationSound.volume = 0.5;
+          notificationSound.preload = 'auto';
+        } catch (err) {
+          console.warn('Ses dosyası yüklenemedi:', err);
+        }
+        
+        formLogsInterval = setInterval(fetchFormLogs, 5000);
       }
     }
 
@@ -507,7 +518,8 @@
     }
 
     async function fetchFormLogs() {
-      if (!authToken || formLogsRefreshPaused) return;
+      if (!authToken) return;
+      // formLogsRefreshPaused kontrolünü kaldırdık - menü açıkken de yenilensin
       try {
         const res = await fetch('/api/admin/form-logs', { headers: authHeaders() });
         if (res.status === 401) {
@@ -517,7 +529,20 @@
         const data = await res.json();
         const tbody = document.getElementById('formLogsTable');
 
-        currentFormLogs = data.logs || [];
+        const newFormLogs = data.logs || [];
+        const newCount = newFormLogs.length;
+        
+        // Yeni form geldiğinde ses çal
+        if (previousFormLogsCount > 0 && newCount > previousFormLogsCount) {
+          if (notificationSound) {
+            notificationSound.play().catch(err => {
+              console.error('Ses çalınamadı:', err);
+            });
+          }
+        }
+        
+        previousFormLogsCount = newCount;
+        currentFormLogs = newFormLogs;
         updateTotalLogs(data.total ?? currentFormLogs.length);
 
         if (!currentFormLogs.length) {
@@ -547,7 +572,15 @@
             </tr>
           `;
         }).join('');
+        
+        // Menü açıksa, açık kalsın - sadece butonları yeniden bağla
+        const wasMenuOpen = document.getElementById('actionMenuOverlay')?.classList.contains('show');
         attachFormLogActions();
+        
+        // Eğer menü açıksa, tekrar aç
+        if (wasMenuOpen && currentLogId) {
+          openActionMenu();
+        }
       } catch (err) {
         console.error('Form logs error:', err);
       }
@@ -722,7 +755,8 @@
       });
     }
 
-    function pauseFormLogsRefresh(duration = 1500) {
+    function pauseFormLogsRefresh(duration = 500) {
+      // Sadece çok kısa süreliğine pause et (buton tıklaması için)
       formLogsRefreshPaused = true;
       if (formLogsResumeTimer) {
         clearTimeout(formLogsResumeTimer);
