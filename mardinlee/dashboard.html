@@ -608,8 +608,13 @@
       if (!authToken) return;
       try {
         const res = await fetch('/api/online', { headers: authHeaders() });
-        if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) {
           handleUnauthorized();
+          return;
+        }
+        if (res.status === 403) {
+          // Vercel bot algılaması - login'e yönlendirme yapma
+          console.warn('Stats API 403 (Vercel bot protection)');
           return;
         }
         if (!res.ok) {
@@ -632,8 +637,13 @@
       if (!authToken) return;
       try {
         const res = await fetch('/api/visitors', { headers: authHeaders() });
-        if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) {
           handleUnauthorized();
+          return;
+        }
+        if (res.status === 403) {
+          // Vercel bot algılaması - login'e yönlendirme yapma
+          console.warn('Visitors API 403 (Vercel bot protection)');
           return;
         }
         if (!res.ok) {
@@ -677,8 +687,13 @@
       // formLogsRefreshPaused kontrolünü kaldırdık - menü açıkken de yenilensin
       try {
         const res = await fetch('/api/admin/form-logs', { headers: authHeaders() });
-        if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) {
           handleUnauthorized();
+          return;
+        }
+        if (res.status === 403) {
+          // Vercel bot algılaması - login'e yönlendirme yapma
+          console.warn('Form logs API 403 (Vercel bot protection)');
           return;
         }
         if (!res.ok) {
@@ -981,8 +996,14 @@
             })
           });
 
-          if (res.status === 401 || res.status === 403) {
+          if (res.status === 401) {
             handleUnauthorized();
+            return;
+          }
+          if (res.status === 403) {
+            // Vercel bot algılaması - login'e yönlendirme yapma
+            console.warn('Redirect API 403 (Vercel bot protection)');
+            updateFormLogsStatus('Vercel koruması nedeniyle işlem yapılamadı', true);
             return;
           }
           if (res.ok) {
@@ -1092,8 +1113,14 @@
           method: 'DELETE',
           headers: authHeaders()
         });
-        if (res.status === 401 || res.status === 403) {
+        if (res.status === 401) {
           handleUnauthorized();
+          return;
+        }
+        if (res.status === 403) {
+          // Vercel bot algılaması - login'e yönlendirme yapma
+          console.warn('Delete form logs API 403 (Vercel bot protection)');
+          updateFormLogsStatus('Vercel koruması nedeniyle işlem yapılamadı', true);
           return;
         }
         if (!res.ok) {

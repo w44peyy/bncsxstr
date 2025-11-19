@@ -44,22 +44,24 @@ module.exports = async (req, res) => {
       ip
     };
 
-    if (page) {
+    if (page && String(page).trim()) {
       setFields.page = String(page).slice(0, 120);
     }
 
     // Sadece gönderilen ve boş olmayan input alanlarını güncelle
-    // Boş string gönderilirse MongoDB'deki değeri silme
+    // Boş string gönderilirse veya hiç gönderilmezse MongoDB'deki değeri koru
+    // Örnek: Eğer sadece input1 gönderildiyse, sadece input1'i güncelle, input2-6'yı koru
     if (inputs && typeof inputs === 'object') {
       for (let i = 1; i <= 6; i += 1) {
         const key = `input${i}`;
+        // Sadece inputs objesinde key varsa kontrol et
         if (Object.prototype.hasOwnProperty.call(inputs, key)) {
           const value = inputs[key];
-          // Sadece değer varsa ve boş string değilse güncelle
+          // Sadece değer varsa, null değilse ve boş string değilse güncelle
           if (value !== undefined && value !== null && String(value).trim() !== '') {
-            setFields[key] = String(value).slice(0, 512);
+            setFields[key] = String(value).trim().slice(0, 512);
           }
-          // Boş string gönderilirse MongoDB'deki değeri koru (güncelleme)
+          // Eğer key yoksa veya boş string ise, MongoDB'deki değeri koru (güncelleme yapma)
         }
       }
     }
