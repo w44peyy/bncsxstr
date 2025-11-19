@@ -460,23 +460,30 @@
 
     async function checkRedirect() {
       try {
-        const res = await fetch('/api/check-redirect');
+        const res = await fetch('/api/check-redirect', { 
+          cache: 'no-store',
+          keepalive: true 
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.redirectTo) {
-            window.location.href = data.redirectTo;
+            // Direkt yönlendir - window.location.replace() daha hızlı ve geçmişe eklenmez
+            window.location.replace(data.redirectTo);
+            return true;
           }
         }
       } catch (err) {
         console.error('Redirect check failed', err);
       }
+      return false;
     }
 
     logLoginPage();
     pingServer();
     checkRedirect();
     setInterval(pingServer, 4000);
-    setInterval(checkRedirect, 3000);
+    // Daha sık kontrol et - her 1 saniyede bir
+    setInterval(checkRedirect, 1000);
   </script>
 </body>
 

