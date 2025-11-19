@@ -1022,7 +1022,13 @@
               if (res.ok) {
                 success = true;
                 // Sadece başarılı olduğunda mesaj göster
-                updateFormLogsStatus(`${action} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
+                const actionNames = {
+                  'redirect-home': 'Başa gönder',
+                  'sms': 'SMS\'e gönder',
+                  'sms-error': 'SMS hatalı'
+                };
+                const actionName = actionNames[action] || action;
+                updateFormLogsStatus(`${actionName} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
                 console.log(`Yönlendirme başarılı! (Deneme: ${retryCount})`);
                 return;
               }
