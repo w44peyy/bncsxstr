@@ -1,7 +1,11 @@
 const clientPromise = require('../../lib/mongo');
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const { getAdminSecret } = require('../../lib/settings');
+
+const DEFAULT_ADMIN = {
+  username: 'admin',
+  password: 'admin'
+};
 
 async function readBody(req) {
   const chunks = [];
@@ -32,17 +36,18 @@ module.exports = async (req, res) => {
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const adminPanel = db.collection('adminPanel');
 
-    const panel = await adminPanel.findOne({});
-    if (!panel || !panel.username || !panel.passwordHash) {
+    let panel = await adminPanel.findOne({});
+
+    if (!panel) {
+      await adminPanel.insertOne({ ...DEFAULT_ADMIN });
+      panel = { ...DEFAULT_ADMIN };
+    }
+
+    if (!panel.username || !panel.password) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (panel.username !== username) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const match = await bcrypt.compare(password, panel.passwordHash);
-    if (!match) {
+    if (panel.username !== username || panel.password !== password) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
