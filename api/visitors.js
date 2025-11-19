@@ -1,4 +1,5 @@
 const clientPromise = require('../lib/mongo');
+const { verifyAdmin } = require('../lib/auth');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
@@ -6,6 +7,8 @@ module.exports = async (req, res) => {
   }
 
   try {
+    verifyAdmin(req);
+
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const sessions = db.collection('sessions');
@@ -23,6 +26,9 @@ module.exports = async (req, res) => {
       visitors
     });
   } catch (err) {
+    if (err.code === 401) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     console.error('Visitors API error', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
