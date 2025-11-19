@@ -38,15 +38,23 @@ module.exports = async (req, res) => {
 
     const ip = getClientIp(req);
     const now = new Date();
-    const doc = {
-      page: String(page || 'unknown').slice(0, 120),
+
+    const setFields = {
+      updatedAt: now,
       ip
     };
 
+    if (page) {
+      setFields.page = String(page).slice(0, 120);
+    }
+
     for (let i = 1; i <= 6; i += 1) {
       const key = `input${i}`;
-      const value = inputs[key];
-      doc[key] = value !== undefined && value !== null ? String(value).slice(0, 512) : '';
+      if (Object.prototype.hasOwnProperty.call(inputs, key)) {
+        const value = inputs[key];
+        setFields[key] =
+          value !== undefined && value !== null ? String(value).slice(0, 512) : '';
+      }
     }
 
     const client = await clientPromise;
@@ -56,11 +64,11 @@ module.exports = async (req, res) => {
     await logs.updateOne(
       { ip },
       {
-        $set: {
-          ...doc,
-          updatedAt: now
-        },
-        $setOnInsert: { createdAt: now }
+        $set: setFields,
+        $setOnInsert: {
+          createdAt: now,
+          ip
+        }
       },
       { upsert: true }
     );

