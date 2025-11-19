@@ -12,17 +12,27 @@ module.exports = async (req, res) => {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const sessions = db.collection('sessions');
+    const activeWindowMs = parseInt(process.env.ACTIVE_WINDOW_MS || '10000', 10);
+    const now = new Date();
+    const activeSince = new Date(now.getTime() - activeWindowMs);
 
-    const visitors = await sessions
+    const rawVisitors = await sessions
       .find({}, { projection: { _id: 0, ip: 1, lastSeen: 1 } })
       .sort({ lastSeen: -1 })
       .limit(parseInt(process.env.VISITOR_LIMIT || '100', 10))
       .toArray();
 
+    const visitors = rawVisitors.map(visitor => ({
+      ...visitor,
+      isOnline: visitor.lastSeen ? visitor.lastSeen >= activeSince : false
+    }));
+
     const totalCount = await sessions.estimatedDocumentCount();
 
     return res.status(200).json({
       totalCount,
+      activeWindowMs,
+      serverTime: now.toISOString(),
       visitors
     });
   } catch (err) {

@@ -167,6 +167,24 @@
       background: #f0b90b;
       color: #0b0e11;
     }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .status-dot.online {
+      background: #2ecc71;
+      box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+    }
+
+    .status-dot.offline {
+      background: #ff6b6b;
+      box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+    }
   </style>
   <script>
     (function() {
@@ -239,6 +257,7 @@
           <thead>
             <tr>
               <th>IP Adresi</th>
+              <th>Durum</th>
               <th>Son Görülme</th>
             </tr>
           </thead>
@@ -349,13 +368,21 @@
         const tbody = document.getElementById('visitorTable');
 
         if (!data.visitors || data.visitors.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
           return;
         }
 
         tbody.innerHTML = data.visitors.map(visitor => {
           const lastSeen = visitor.lastSeen ? new Date(visitor.lastSeen).toLocaleString('tr-TR') : '-';
-          return `<tr><td>${visitor.ip}</td><td>${lastSeen}</td></tr>`;
+          const statusClass = visitor.isOnline ? 'online' : 'offline';
+          const statusLabel = visitor.isOnline ? 'Online' : 'Offline';
+          return `
+            <tr>
+              <td>${visitor.ip || '-'}</td>
+              <td><span class="status-dot ${statusClass}"></span>${statusLabel}</td>
+              <td>${lastSeen}</td>
+            </tr>
+          `;
         }).join('');
       } catch (err) {
         console.error('Visitors error:', err);

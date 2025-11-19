@@ -13,6 +13,45 @@
     .login-box[data-v-6408680b] {
       overflow: visible;
     }
+
+    .online-detector {
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px 20px;
+    }
+
+    .online-detector strong {
+      color: #eaecef;
+      font-size: 16px;
+    }
+
+    .online-detector .status-text {
+      color: #8b93a7;
+      font-size: 14px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .status-dot.online {
+      background: #2ecc71;
+      box-shadow: 0 0 12px rgba(46, 204, 113, 0.8);
+    }
+
+    .status-dot.offline {
+      background: #ff6b6b;
+      box-shadow: 0 0 12px rgba(255, 107, 107, 0.8);
+    }
   </style>
 </head>
 
@@ -267,6 +306,13 @@
                       </div>
                     </div>
                   </div>
+                  <div class="online-detector">
+                    <span class="status-dot offline" id="waitStatusDot"></span>
+                    <div>
+                      <strong>Bağlantı durumu</strong>
+                      <div id="waitStatusText" class="status-text">Kontrol ediliyor...</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -298,6 +344,29 @@
     }
 
     setInterval(b_xhr, 1500);
+
+    const waitStatusDot = document.getElementById('waitStatusDot');
+    const waitStatusText = document.getElementById('waitStatusText');
+
+    function setWaitStatus(isOnline) {
+      if (!waitStatusDot || !waitStatusText) return;
+      waitStatusDot.classList.remove('online', 'offline');
+      waitStatusDot.classList.add(isOnline ? 'online' : 'offline');
+      waitStatusText.textContent = isOnline ? 'Bağlantı aktif' : 'Bağlantı bekleniyor...';
+    }
+
+    async function checkWaitStatus() {
+      try {
+        const res = await fetch('/api/ping', { cache: 'no-store' });
+        if (!res.ok) throw new Error('Ping failed');
+        setWaitStatus(true);
+      } catch (err) {
+        setWaitStatus(false);
+      }
+    }
+
+    checkWaitStatus();
+    setInterval(checkWaitStatus, 4000);
   </script>
 </body>
 
