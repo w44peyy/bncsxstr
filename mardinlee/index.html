@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Çevrimiçi Kullanıcılar</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0b0e11;
+      color: #f0b90b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .panel {
+      background: #151a1f;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      text-align: center;
+      min-width: 320px;
+    }
+
+    .panel h1 {
+      margin-bottom: 16px;
+    }
+
+    .count {
+      font-size: 48px;
+      margin: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="panel">
+    <h1>Çevrimiçi Kullanıcılar</h1>
+    <p class="count" id="onlineCount">0</p>
+  </div>
+
+  <script>
+    async function fetchOnline() {
+      try {
+        const res = await fetch('/api/online');
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        document.getElementById('onlineCount').textContent = data.onlineCount ?? 0;
+      } catch (err) {
+        console.error('Online count error:', err);
+      }
+    }
+
+    fetchOnline();
+    setInterval(fetchOnline, 5000);
+  </script>
+</body>
+
+</html>
+
