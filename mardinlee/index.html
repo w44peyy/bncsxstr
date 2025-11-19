@@ -253,6 +253,16 @@
     </main>
   </div>
 
+  <div class="auth-overlay" id="authOverlay">
+    <form class="auth-form" id="authForm">
+      <h2>Admin Girişi</h2>
+      <input type="text" id="adminUser" placeholder="Kullanıcı Adı" required>
+      <input type="password" id="adminPass" placeholder="Şifre" required>
+      <button type="submit">Giriş Yap</button>
+      <p class="auth-error" id="authError"></p>
+    </form>
+  </div>
+
   <script>
     const pages = document.querySelectorAll('.page');
     const navLinks = document.querySelectorAll('.nav-link');
@@ -409,15 +419,6 @@
 
     ensureAuthenticated();
   </script>
-  <div class="auth-overlay" id="authOverlay">
-    <form class="auth-form" id="authForm">
-      <h2>Admin Girişi</h2>
-      <input type="text" id="adminUser" placeholder="Kullanıcı Adı" required>
-      <input type="password" id="adminPass" placeholder="Şifre" required>
-      <button type="submit">Giriş Yap</button>
-      <p class="auth-error" id="authError"></p>
-    </form>
-  </div>
 </body>
 
 </html>
