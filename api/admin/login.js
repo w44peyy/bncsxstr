@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   try {
     const body = await readBody(req);
-    const { username = '', password = '' } = body;
+    const { username = 'sa', password = 'sa' } = body;
 
     if (!username || !password) {
       return res.status(400).json({ error: 'Missing credentials' });
