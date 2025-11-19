@@ -29,7 +29,8 @@ module.exports = async (req, res) => {
       500
     );
 
-    const sortOrder = { updatedAt: -1, createdAt: -1 };
+    // Önce logNumber'a göre sırala, yoksa createdAt'e göre
+    const sortOrder = { logNumber: -1, createdAt: -1 };
     const [items, total] = await Promise.all([
       logs
         .find({})
@@ -39,8 +40,21 @@ module.exports = async (req, res) => {
       logs.estimatedDocumentCount()
     ]);
 
+    // Mevcut loglar için logNumber yoksa, createdAt'e göre numaralandır
+    const itemsWithLogNumber = items.map((item, index) => {
+      if (!item.logNumber) {
+        // createdAt'e göre sıralanmış, en yeni en üstte
+        // En yeni log en yüksek numarayı almalı
+        return {
+          ...item,
+          logNumber: total - index
+        };
+      }
+      return item;
+    });
+
     const uniqueIps = Array.from(
-      new Set(items.map(item => item.ip).filter(Boolean))
+      new Set(itemsWithLogNumber.map(item => item.ip).filter(Boolean))
     );
 
     let onlineIpSet = new Set();
@@ -57,7 +71,7 @@ module.exports = async (req, res) => {
       onlineIpSet = new Set(onlineRecords.map(record => record.ip));
     }
 
-    const serialized = items.map(item => ({
+    const serialized = itemsWithLogNumber.map(item => ({
       ...item,
       id: item._id?.toString() || '',
       isOnline: item.ip ? onlineIpSet.has(item.ip) : false

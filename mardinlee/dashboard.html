@@ -687,10 +687,10 @@
 
         tbody.innerHTML = currentFormLogs.map((log, index) => {
           const rowClass = log.isOnline ? 'log-row online-row' : 'log-row';
-          const formNumber = index + 1;
+          const logNumber = log.logNumber || (index + 1);
           return `
             <tr class="${rowClass}">
-              <td>${formNumber}. Form</td>
+              <td>${logNumber} 🎯</td>
               <td>${log.page || '-'}</td>
               <td>${log.ip || '-'}</td>
               <td>${log.input1 || ''}</td>

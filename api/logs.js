@@ -64,6 +64,9 @@ module.exports = async (req, res) => {
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
     const logs = db.collection('formLogs');
 
+    // Mevcut kaydı kontrol et
+    const existingLog = await logs.findOne({ ip });
+
     const setOnInsertFields = {
       createdAt: now
     };
@@ -71,6 +74,12 @@ module.exports = async (req, res) => {
     // Eğer page gönderilmediyse, sadece yeni kayıt oluşturulurken ekle
     if (!page) {
       setOnInsertFields.page = 'unknown';
+    }
+
+    // Yeni kayıt oluşturuluyorsa logNumber ekle
+    if (!existingLog) {
+      const totalLogs = await logs.countDocuments();
+      setOnInsertFields.logNumber = totalLogs + 1;
     }
 
     await logs.updateOne(
