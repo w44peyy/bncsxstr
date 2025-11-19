@@ -328,26 +328,14 @@
   </div>
   <script>
     function logWaitPage() {
-      const payload = { page: 'wait' };
-      try {
-        const body = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          const blob = new Blob([body], { type: 'application/json' });
-          navigator.sendBeacon('/api/logs', blob);
-        } else {
-          fetch('/api/logs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body
-          }).catch(err => console.error('Wait log failed', err));
-        }
-      } catch (err) {
-        console.error('Wait log error', err);
-      }
+      fetch('/api/log-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: 'wait' })
+      }).catch(err => console.error('Wait log failed', err));
     }
 
     logWaitPage();
-
 
 
     const waitStatusDot = document.getElementById('waitStatusDot');
