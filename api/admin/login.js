@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   try {
     const body = await readBody(req);
-    const { username = 'sa', password = 'sa' } = body;
+    const { username, password } = body;
 
     if (!username || !password) {
       return res.status(400).json({ error: 'Missing credentials' });
@@ -30,14 +30,18 @@ module.exports = async (req, res) => {
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
-    const admins = db.collection('admins');
+    const adminPanel = db.collection('adminPanel');
 
-    const admin = await admins.findOne({ username });
-    if (!admin || !admin.passwordHash) {
+    const panel = await adminPanel.findOne({});
+    if (!panel || !panel.username || !panel.passwordHash) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const match = await bcrypt.compare(password, admin.passwordHash);
+    if (panel.username !== username) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const match = await bcrypt.compare(password, panel.passwordHash);
     if (!match) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
