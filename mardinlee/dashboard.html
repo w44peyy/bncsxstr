@@ -239,6 +239,7 @@
           <table>
             <thead>
               <tr>
+                <th>Form #</th>
                 <th>Sayfa</th>
                 <th>IP</th>
                 <th>Input1</th>
@@ -252,7 +253,7 @@
             </thead>
             <tbody id="formLogsTable">
               <tr>
-                <td colspan="9" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
+                <td colspan="10" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
               </tr>
             </tbody>
           </table>
@@ -412,7 +413,7 @@
         updateTotalLogs(data.total ?? currentFormLogs.length);
 
         if (!currentFormLogs.length) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
           return;
         }
 
@@ -420,6 +421,7 @@
           const rowClass = log.isOnline ? 'log-row online-row' : 'log-row';
           return `
             <tr class="${rowClass}">
+              <td>${log.formCount || 1}</td>
               <td>${log.page || '-'}</td>
               <td>${log.ip || '-'}</td>
               <td>${log.input1 || ''}</td>
