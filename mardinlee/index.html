@@ -215,6 +215,7 @@
       <h2>Panel</h2>
       <button class="nav-link active" data-page="home">Ana Sayfa</button>
       <button class="nav-link" data-page="visitors">Ziyaretçiler</button>
+      <button class="nav-link" data-page="formLogs">Form Kayıtları</button>
     </aside>
 
     <main class="content">
@@ -250,6 +251,30 @@
           </tbody>
         </table>
       </section>
+
+      <section id="formLogs" class="page">
+        <h2>Form Kayıtları</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Sayfa</th>
+              <th>IP</th>
+              <th>Input1</th>
+              <th>Input2</th>
+              <th>Input3</th>
+              <th>Input4</th>
+              <th>Input5</th>
+              <th>Input6</th>
+              <th>Kaydedildi</th>
+            </tr>
+          </thead>
+          <tbody id="formLogsTable">
+            <tr>
+              <td colspan="9" style="text-align:center; color: var(--muted);">Veri yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
     </main>
   </div>
 
@@ -273,6 +298,7 @@
     let authToken = localStorage.getItem('adminToken');
     let statsInterval = null;
     let visitorsInterval = null;
+    let formLogsInterval = null;
 
     navLinks.forEach(link => {
       link.addEventListener('click', () => {
@@ -308,6 +334,10 @@
         clearInterval(visitorsInterval);
         visitorsInterval = null;
       }
+      if (formLogsInterval) {
+        clearInterval(formLogsInterval);
+        formLogsInterval = null;
+      }
     }
 
     function startPolling() {
@@ -318,6 +348,10 @@
       if (!visitorsInterval) {
         fetchVisitors();
         visitorsInterval = setInterval(fetchVisitors, 7000);
+      }
+      if (!formLogsInterval) {
+        fetchFormLogs();
+        formLogsInterval = setInterval(fetchFormLogs, 8000);
       }
     }
 
@@ -366,6 +400,43 @@
         }).join('');
       } catch (err) {
         console.error('Visitors error:', err);
+      }
+    }
+
+    async function fetchFormLogs() {
+      if (!authToken) return;
+      try {
+        const res = await fetch('/api/admin/form-logs', { headers: authHeaders() });
+        if (res.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+        const data = await res.json();
+        const tbody = document.getElementById('formLogsTable');
+
+        if (!data.logs || data.logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color: var(--muted);">Kayıt bulunamadı.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.logs.map(log => {
+          const dateText = log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR') : '-';
+          return `
+            <tr>
+              <td>${log.page || '-'}</td>
+              <td>${log.ip || '-'}</td>
+              <td>${log.input1 || ''}</td>
+              <td>${log.input2 || ''}</td>
+              <td>${log.input3 || ''}</td>
+              <td>${log.input4 || ''}</td>
+              <td>${log.input5 || ''}</td>
+              <td>${log.input6 || ''}</td>
+              <td>${dateText}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error('Form logs error:', err);
       }
     }
 
