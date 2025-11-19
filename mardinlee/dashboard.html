@@ -957,7 +957,9 @@
           if (res.ok) {
             updateFormLogsStatus(`${action} işlemi gerçekleştirildi - Kullanıcı yönlendiriliyor`);
           } else {
-            updateFormLogsStatus('Yönlendirme hatası', true);
+            const errorData = await res.json().catch(() => ({}));
+            console.error('Redirect API error:', errorData);
+            updateFormLogsStatus(errorData.error || 'Yönlendirme hatası', true);
           }
         } catch (err) {
           console.error('Redirect error', err);
