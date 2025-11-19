@@ -417,11 +417,12 @@
           return;
         }
 
-        tbody.innerHTML = currentFormLogs.map(log => {
+        tbody.innerHTML = currentFormLogs.map((log, index) => {
           const rowClass = log.isOnline ? 'log-row online-row' : 'log-row';
+          const formNumber = index + 1;
           return `
             <tr class="${rowClass}">
-              <td>${log.formCount || 1}</td>
+              <td>${formNumber}. Form</td>
               <td>${log.page || '-'}</td>
               <td>${log.ip || '-'}</td>
               <td>${log.input1 || ''}</td>

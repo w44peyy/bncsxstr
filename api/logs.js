@@ -73,12 +73,10 @@ module.exports = async (req, res) => {
       setOnInsertFields.page = 'unknown';
     }
 
-    // formCount: yeni kayıt için 1, mevcut kayıt için +1
     await logs.updateOne(
       { ip },
       {
         $set: setFields,
-        $inc: { formCount: 1 },
         $setOnInsert: setOnInsertFields
       },
       { upsert: true }
