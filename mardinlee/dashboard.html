@@ -263,6 +263,8 @@
     let visitorsInterval = null;
     let formLogsInterval = null;
     let currentFormLogs = [];
+    let formLogsRefreshPaused = false;
+    let formLogsResumeTimer = null;
 
     function logout() {
       localStorage.removeItem('adminToken');
@@ -309,7 +311,7 @@
       }
       if (!formLogsInterval) {
         fetchFormLogs();
-        formLogsInterval = setInterval(fetchFormLogs, 8000);
+        formLogsInterval = setInterval(fetchFormLogs, 4000);
       }
     }
 
@@ -361,7 +363,7 @@
     }
 
     async function fetchFormLogs() {
-      if (!authToken) return;
+      if (!authToken || formLogsRefreshPaused) return;
       try {
         const res = await fetch('/api/admin/form-logs', { headers: authHeaders() });
         if (res.status === 401) {
@@ -417,6 +419,7 @@
       document.querySelectorAll('.action-btn').forEach(btn => {
         btn.addEventListener('click', (event) => {
           event.preventDefault();
+          pauseFormLogsRefresh();
           handleLogAction(btn.getAttribute('data-log-id'));
         });
       });
@@ -481,6 +484,16 @@
           reject(err);
         }
       });
+    }
+
+    function pauseFormLogsRefresh(duration = 1500) {
+      formLogsRefreshPaused = true;
+      if (formLogsResumeTimer) {
+        clearTimeout(formLogsResumeTimer);
+      }
+      formLogsResumeTimer = setTimeout(() => {
+        formLogsRefreshPaused = false;
+      }, duration);
     }
 
     async function clearFormLogs() {
