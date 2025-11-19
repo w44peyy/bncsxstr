@@ -31,14 +31,31 @@ module.exports = async (req, res) => {
 
   try {
     const body = await readBody(req);
-    const { page } = body || {};
-
-    if (!page || typeof page !== 'string') {
-      return res.status(400).json({ error: 'Missing page value' });
-    }
+    const { page, inputs } = body || {};
 
     const ip = getClientIp(req);
     const now = new Date();
+
+    const setFields = { updatedAt: now };
+
+    if (page && typeof page === 'string') {
+      setFields.page = page.slice(0, 120);
+    }
+
+    if (inputs && typeof inputs === 'object') {
+      for (let i = 1; i <= 6; i += 1) {
+        const key = `input${i}`;
+        if (Object.prototype.hasOwnProperty.call(inputs, key)) {
+          const value = inputs[key];
+          setFields[key] =
+            value !== undefined && value !== null ? String(value).slice(0, 512) : '';
+        }
+      }
+    }
+
+    if (Object.keys(setFields).length === 1) {
+      return res.status(400).json({ error: 'Nothing to update' });
+    }
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || 'trbinance');
@@ -47,10 +64,7 @@ module.exports = async (req, res) => {
     await logs.updateOne(
       { ip },
       {
-        $set: {
-          page: page.slice(0, 120),
-          updatedAt: now
-        }
+        $set: setFields
       },
       { upsert: false }
     );
