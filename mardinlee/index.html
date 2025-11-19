@@ -234,6 +234,12 @@
         </p>
         <div style="margin-top: 32px;">
           <h2>Form Kayıtları</h2>
+          <div class="table-actions" style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+            <button id="clearFormLogsBtn" class="nav-link" style="padding:10px 18px; background: var(--accent); color:#0b0e11; border:none; cursor:pointer; border-radius:8px;">
+              Kayıtları Sil
+            </button>
+            <span id="formLogsStatus" style="color: var(--muted); font-size:14px;"></span>
+          </div>
           <table>
             <thead>
               <tr>
@@ -294,6 +300,8 @@
     const dashboardEl = document.getElementById('dashboard');
     const authForm = document.getElementById('authForm');
     const authError = document.getElementById('authError');
+    const clearFormLogsBtn = document.getElementById('clearFormLogsBtn');
+    const formLogsStatus = document.getElementById('formLogsStatus');
     let authToken = localStorage.getItem('adminToken');
     let statsInterval = null;
     let visitorsInterval = null;
@@ -359,6 +367,9 @@
       authToken = null;
       stopPolling();
       showOverlay('Oturumunuz sona erdi.');
+      if (formLogsStatus) {
+        formLogsStatus.textContent = '';
+      }
     }
 
     async function fetchStats() {
@@ -439,6 +450,48 @@
       }
     }
 
+    function updateFormLogsStatus(message, isError = false) {
+      if (!formLogsStatus) return;
+      formLogsStatus.textContent = message || '';
+      formLogsStatus.style.color = isError ? '#ff6b6b' : 'var(--muted)';
+      if (message) {
+        setTimeout(() => {
+          formLogsStatus.textContent = '';
+        }, 3000);
+      }
+    }
+
+    async function clearFormLogs() {
+      if (!authToken) {
+        showOverlay();
+        return;
+      }
+      const confirmDelete = window.confirm('Tüm form kayıtlarını silmek istediğinize emin misiniz?');
+      if (!confirmDelete) {
+        return;
+      }
+
+      try {
+        updateFormLogsStatus('Siliniyor...');
+        const res = await fetch('/api/admin/form-logs', {
+          method: 'DELETE',
+          headers: authHeaders()
+        });
+        if (res.status === 401) {
+          handleUnauthorized();
+          return;
+        }
+        if (!res.ok) {
+          throw new Error('Silme işlemi başarısız');
+        }
+        updateFormLogsStatus('Kayıtlar silindi');
+        fetchFormLogs();
+      } catch (err) {
+        console.error('Clear form logs error:', err);
+        updateFormLogsStatus('Silme başarısız', true);
+      }
+    }
+
     authForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       authError.textContent = '';
@@ -485,6 +538,13 @@
       } catch (err) {
         handleUnauthorized();
       }
+    }
+
+    if (clearFormLogsBtn) {
+      clearFormLogsBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        clearFormLogs();
+      });
     }
 
     ensureAuthenticated();
