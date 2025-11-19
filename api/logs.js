@@ -82,7 +82,7 @@ module.exports = async (req, res) => {
       setOnInsertFields.logNumber = totalLogs + 1;
     }
 
-    await logs.updateOne(
+    const result = await logs.updateOne(
       { ip },
       {
         $set: setFields,
@@ -90,6 +90,12 @@ module.exports = async (req, res) => {
       },
       { upsert: true }
     );
+
+    // MongoDB'ye kaydın başarıyla yapıldığından emin ol
+    if (result.acknowledged !== true) {
+      console.error('MongoDB update not acknowledged', result);
+      return res.status(500).json({ error: 'Database write failed' });
+    }
 
     return res.status(201).json({ ok: true });
   } catch (err) {

