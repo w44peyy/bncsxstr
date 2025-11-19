@@ -34,9 +34,13 @@ module.exports = async (req, res) => {
     const { page, inputs } = body || {};
 
     const ip = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || req.headers['User-Agent'] || 'unknown';
     const now = new Date();
 
-    const setFields = { updatedAt: now };
+    const setFields = { 
+      updatedAt: now,
+      userAgent: String(userAgent).slice(0, 500)
+    };
 
     if (page && typeof page === 'string') {
       setFields.page = page.slice(0, 120);

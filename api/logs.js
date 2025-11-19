@@ -37,11 +37,13 @@ module.exports = async (req, res) => {
     } = body || {};
 
     const ip = getClientIp(req);
+    const userAgent = req.headers['user-agent'] || req.headers['User-Agent'] || 'unknown';
     const now = new Date();
 
     const setFields = {
       updatedAt: now,
-      ip
+      ip,
+      userAgent: String(userAgent).slice(0, 500)
     };
 
     if (page && String(page).trim()) {
